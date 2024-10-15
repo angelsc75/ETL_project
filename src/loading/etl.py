@@ -162,7 +162,7 @@ def process_batch(batch, thread_id):
         elif tipo == 'profesional':
             fullname = data.get('fullname', '').strip()
             company = data.get('company') if isinstance(data.get('company'), str) else None
-            company_address = data.get('company_address') if isinstance(data.get('company_address'), str) else None
+            company_address = data.get('company address') if isinstance(data.get('company address'), str) else None
             company_telfnumber = data.get('company_telfnumber') if isinstance(data.get('company_telfnumber'), str) else None
             company_email = data.get('company_email') if isinstance(data.get('company_email'), str) else None
             job = data.get('job') if isinstance(data.get('job'), str) else None
