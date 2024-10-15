@@ -22,6 +22,22 @@ mysql_conn = mysql.connector.connect(
 )
 mysql_cursor = mysql_conn.cursor()
 
+# Borrar y recrear la base de datos hr_data
+mysql_cursor.execute("DROP DATABASE IF EXISTS hr_data")
+mysql_cursor.execute("CREATE DATABASE hr_data")
+mysql_cursor.execute("USE hr_data")
+
+# Reconectar a la base de datos hr_data
+mysql_conn.close()
+mysql_conn = mysql.connector.connect(
+    host="localhost",
+    port=3306,
+    user="root",
+    password="admin",
+    database="hr_data"
+)
+mysql_cursor = mysql_conn.cursor()
+
 # Crear tabla en MySQL si no existe
 # Tabla para datos personales
 create_personal_data_table = """
