@@ -1,9 +1,18 @@
 from confluent_kafka import Consumer, KafkaError
 from confluent_kafka.admin import AdminClient
+from loading.mongodbloader import MongoDBLoader
+from transformation.datatransformer import process_and_group_data  # Importar la función de transformación
 
 class KafkaConsumer:
     
-    def __init__(self, bootstrap_servers, group_id):
+    def __init__(self, bootstrap_servers, group_id, mongo_loader):
+        """
+        Inicializa el consumidor de Kafka y el cliente de MongoDB.
+        
+        :param bootstrap_servers: Dirección y puerto del servidor Kafka.
+        :param group_id: Grupo de consumidores de Kafka.
+        :param mongo_loader: Instancia de MongoDBLoader para cargar los mensajes en MongoDB.
+        """
         self.conf = {
             'bootstrap.servers': bootstrap_servers,
             'group.id': group_id,
@@ -11,12 +20,15 @@ class KafkaConsumer:
         }
         # Crear el consumidor
         self.consumer = Consumer(self.conf)
-        # Crear el cliente de administración por separado
+        
+        # Crear el cliente de administración de Kafka
         self.admin_conf = {
             'bootstrap.servers': bootstrap_servers
         }
         self.admin_client = AdminClient(self.admin_conf)
-        
+
+        # Loader para MongoDB
+        self.mongo_loader = mongo_loader  # Pasamos el loader de MongoDB desde main.py
 
     def start_consuming(self):
         # Paso 1: Obtener la lista de tópicos
@@ -50,15 +62,25 @@ class KafkaConsumer:
                     else:
                         print(f"Error: {msg.error()}")
                 else:
-                    # Procesar el mensaje
-                    print(f"Mensaje recibido: {msg.value().decode('utf-8')}")
+                    # Procesar el mensaje recibido
+                    raw_message  = msg.value().decode('utf-8')
+                    print(f"Mensaje recibido: {raw_message}")
+
+                    # Transformar el mensaje usando el datatransformer
+                    transformed_data = process_and_group_data(raw_message)
+
+                    # Guardar los datos transformados en MongoDB
+                    self.mongo_loader.load_to_mongodb(transformed_data)
+
+                    # Guardar los datos transformados en SQL
+                    # self.sql_loader.insert_data(transformed_data)
+
         except KeyboardInterrupt:
             pass
         finally:
-            # Cerrar el consumidor
+            # Cerrar el consumidor y la conexión a MongoDB
             self.consumer.close()
+            self.mongo_loader.close()
 
 
-# Inicializar y consumir mensajes
-# kafka_consumer = KafkaConsumer("localhost:29092", "hrpro-group")
-# kafka_consumer.start_consuming()
+# Esta clase es llamada e inicializada desde main.py, no directamente desde aquí.
