@@ -4,9 +4,11 @@ import mysql.connector
 from concurrent.futures import ThreadPoolExecutor
 import threading
 import time
+from collections import defaultdict
 
 # Lock para sincronización de threads
 lock = threading.Lock()
+
 # Conexión a MongoDB
 mongo_client = MongoClient('mongodb://localhost:27017/')
 mongo_db = mongo_client['hr_data']
@@ -68,14 +70,27 @@ CREATE TABLE IF NOT EXISTS personal_data (
     telfnumber VARCHAR(100),
     passport VARCHAR(20),
     email VARCHAR(100),
-    location_id INT,
-    data_validity VARCHAR(50) DEFAULT 'ok',
-    UNIQUE KEY unique_passport (passport),
-    UNIQUE KEY unique_fullname (fullname),
+    location_id INT,  -- Permitimos que pueda ser NULL si no hay coincidencia
+    data_validity VARCHAR(50),
     FOREIGN KEY (location_id) REFERENCES location(id)
 );
 """
 mysql_cursor.execute(create_personal_data_table)
+
+create_passport_index = """
+CREATE INDEX idx_passport_personal_data ON personal_data(passport);
+"""
+mysql_cursor.execute(create_passport_index)
+
+create_fullname_location_index = """
+CREATE INDEX idx_fullname_location ON location(fullname);
+"""
+mysql_cursor.execute(create_fullname_location_index)
+
+create_fullname_personal_data_index = """
+CREATE INDEX idx_fullname_personal_data ON personal_data(fullname);
+"""
+mysql_cursor.execute(create_fullname_personal_data_index)
 
 create_professional_data_table = """
 CREATE TABLE IF NOT EXISTS professional_data (
@@ -129,6 +144,9 @@ def determinar_tipo_dato(data):
     else:
         return 'desconocido'
 
+# Diccionario para contar las ocurrencias de pasaportes
+passport_counter = defaultdict(int)
+
 def process_batch(batch, thread_id):
     print(f"Thread {thread_id} starting to process batch of {len(batch)} items")
     start_time = time.time()
@@ -157,7 +175,12 @@ def process_batch(batch, thread_id):
             passport = data.get('passport') if isinstance(data.get('passport'), str) else None
             email = data.get('email') if isinstance(data.get('email'), str) else None
             
-            personal_data.append((name, last_name, fullname, sex, telfnumber, passport, email))
+            # Incrementar el contador de pasaportes y verificar la validez
+            with lock:
+                passport_counter[passport] += 1
+                data_validity = "ok" if passport_counter[passport] == 1 else "aviso posible fraude"
+            
+            personal_data.append((name, last_name, fullname, sex, telfnumber, passport, email, data_validity))
         
         elif tipo == 'location':
             fullname = data.get('fullname', '').strip()
@@ -188,6 +211,7 @@ def process_batch(batch, thread_id):
             address = data.get('address') if isinstance(data.get('address'), str) else None
             ipv4 = data.get('IPv4') if isinstance(data.get('IPv4'), str) else None
             net_data.append((address, ipv4))
+        
 
     with lock:
         if location_data:
@@ -200,41 +224,32 @@ def process_batch(batch, thread_id):
         if personal_data:
             for person in personal_data:
                 fullname = person[2]
-                passport = person[5]
-                
-                # Buscar coincidencias en location
-                mysql_cursor.execute("""
-                    SELECT id FROM location 
-                    WHERE fullname LIKE CONCAT('%', %s, '%') 
-                    ORDER BY CHAR_LENGTH(fullname) ASC 
-                    LIMIT 1
-                """, (fullname,))
-                location_match = mysql_cursor.fetchone()
-                
-                if location_match:
-                    location_id = location_match[0]
-                    
-                    # Verificar si ya existe un registro con el mismo passport
-                    mysql_cursor.execute("""
-                        SELECT COUNT(*) FROM personal_data 
-                        WHERE passport = %s
-                    """, (passport,))
-                    existing_count = mysql_cursor.fetchone()[0]
-                    
-                    data_validity = "ok" if existing_count == 0 else "aviso posible fraude"
-                    
-                    mysql_cursor.execute("""
-                        INSERT INTO personal_data 
-                        (name, last_name, fullname, sex, telfnumber, passport, email, location_id, data_validity) 
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    """, person + (location_id, data_validity))
-                else:
-                    # Si no hay coincidencia en location, insertar sin location_id
-                    mysql_cursor.execute("""
-                        INSERT INTO personal_data 
-                        (name, last_name, fullname, sex, telfnumber, passport, email, data_validity) 
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, 'ok')
-                    """, person)
+        
+        # Buscar coincidencias en location usando LIKE
+        mysql_cursor.execute("""
+            SELECT id FROM location 
+            WHERE fullname LIKE CONCAT('%', %s, '%') 
+            ORDER BY CHAR_LENGTH(fullname) ASC
+        """, (fullname,))
+        
+        # Esto asegura que el resultado es consumido
+        resultados = mysql_cursor.fetchall()
+        if resultados:
+            location_id = resultados[0][0]
+        
+                           
+            mysql_cursor.execute("""
+                INSERT INTO personal_data 
+                (name, last_name, fullname, sex, telfnumber, passport, email, location_id, data_validity) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, person[:7] + (location_id, person[7]))
+        else:
+            # Si no se encuentra una coincidencia, se deja location_id como NULL
+            mysql_cursor.execute("""
+                INSERT INTO personal_data 
+                (name, last_name, fullname, sex, telfnumber, passport, email, data_validity) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """, person[:7] + (person[7],)) 
         
         if professional_data:
             for prof_data in professional_data:
@@ -270,6 +285,8 @@ def process_batch(batch, thread_id):
             """, net_data)
         
         mysql_conn.commit()
+        
+        
     
     end_time = time.time()
     print(f"Thread {thread_id} finished processing batch in {end_time - start_time:.2f} seconds")
