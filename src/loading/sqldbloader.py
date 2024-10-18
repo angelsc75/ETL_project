@@ -22,6 +22,8 @@ class SQLloader:
             self.connect()
             # Ejecutar una consulta y mostrar el resultado
             self.execute_query("INSERT INTO hrpro.salarios (IBAN, salary, currency ) VALUES('ljhlkadfjhlkjhlkjh', 2222, '€');")
+            # Confirmar la transacción
+            self.connection.commit()
             # Cerrar la conexión
             self.close()
 

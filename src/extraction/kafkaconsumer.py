@@ -24,7 +24,7 @@ class KafkaConsumer:
         
         # Crear el cliente de administración de Kafka
         self.admin_conf = {
-            'bootstrap.servers': bootstrap_servers
+            'bootstrap.servers': bootstrap_servers,
         }
         self.admin_client = AdminClient(self.admin_conf)
 
