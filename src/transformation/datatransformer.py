@@ -2,26 +2,10 @@ import json
 import re
 import phonenumbers
 
-def standardize_phone(telfnumber):
+def standardize_phone(phone_number):
     """ Valida y formatea los números de teléfono usando la librería phonenumbers """
-    if telfnumber:
+    if phone_number:
         try:
-            # Parsear el número sin una región predeterminada
-            # phone_obj = phonenumbers.parse(telfnumber)
-
-            # # Validar si el número de teléfono es válido
-            # if phonenumbers.is_valid_number(phone_obj):
-            #     # Obtener la región del número
-            #     region = phonenumbers.region_code_for_number(phone_obj)
-                
-            #     # Formatear el número en formato internacional
-            #     return phonenumbers.format_number(phone_obj, phonenumbers.PhoneNumberFormat.INTERNATIONAL), region
-            # else:
-            #     return None, None  # Si el número no es válido, devolver None
-
-            # Número de teléfono a verificar
-            phone_number = telfnumber
-
             # Parsear el número con phonenumbers
             try:
                 phone_obj = phonenumbers.parse(phone_number)
@@ -60,32 +44,54 @@ def validate_email(email):
     return None
 
 def normalize_gender(sex):
-    """ Normaliza el género a 'M', 'F' o 'ND' (no definido) """
+    """ 
+    Normaliza el género a 'M', 'F' o 'ND' (no definido).
+    Maneja casos donde sex puede ser una lista o un string.
+    """
     if sex:
-        if sex.upper() in ['M', 'F']:
-            return sex.upper()
-        else:
-            return 'ND'  # No definido
-    return 'ND'
+        # Si 'sex' es una lista, tomar el primer elemento
+        if isinstance(sex, list) and len(sex) > 0:
+            sex = sex[0]
+        
+        # Verificar si el valor es un string antes de aplicar upper()
+        if isinstance(sex, str):
+            if sex.upper() in ['M', 'F']:
+                return sex.upper()
+            else:
+                return 'ND'  # No definido si no es 'M' o 'F'
+    
+    return 'ND'  # No definido si sex es None o no válido
+
+def is_valid_passport(passport_number):
+    # Una expresión regular genérica para pasaportes
+    pattern = r'^[A-Z0-9]{6,9}$'  # Generalmente entre 6 y 9 caracteres alfanuméricos
+    return bool(re.match(pattern, passport_number))
+    
+def validate_generic_passport_format(passport_number):
+    is_valid = is_valid_passport(passport_number)  
+    if is_valid:
+        try:    
+            return passport_number
+        except re.error:
+             return None  # Si el pasaporte no es válido, devolver None
+    else:
+        return None
+
 
 
 def process_and_group_data(raw_message):
     """
     Transforma y agrupa los datos del mensaje crudo en las categorías definidas.
     """
-    # Supongamos que el mensaje ya viene en formato JSON
-    data = json.loads(raw_message)
+    try:
+        # Supongamos que el mensaje ya viene en formato JSON
+        data = json.loads(raw_message)
+    except json.JSONDecodeError as e:
+        # Manejar el error si el JSON no es válido
+        print(f"Error al decodificar JSON: {e}")
+        return {"error": "Invalid JSON format"}
 
     # Extraer diferentes categorías de datos
-    message = data
-
-    # Manejar location_data solo si existe "city" o algún campo relacionado
-    # location_data = {}
-    # personal_data = {}
-    # professional_data = {}
-    # bank_data = {}
-    # net_data = {}
-
     if "city" in data or "country" in data:
         location_data = {
             "fullname": data.get("fullname"),
@@ -99,15 +105,14 @@ def process_and_group_data(raw_message):
         personal_data = {
             "name": data.get("name"),
             "last_name": data.get("last_name"),
+            "fullname": f"{data.get('name', '')} {data.get('last_name', '')}".strip(),
             "telfnumber": standardize_phone(data.get("telfnumber")),
-            "telfnumber_raw": data.get("telfnumber"),
-            "passport": data.get("passport"),
+            "passport": validate_generic_passport_format(data.get("passport")),
             "email": validate_email(data.get("email")),
-            "sex": data.get("sex")[0] if data.get("sex") else None 
+            "sex": normalize_gender(data.get("sex"))  # Corregido para usar normalize_gender
         }
         return personal_data
 
-    
     elif "job" in data or "company" in data:
         professional_data = {
             "fullname": data.get("fullname"),
@@ -119,7 +124,6 @@ def process_and_group_data(raw_message):
         }
         return professional_data
 
-    
     elif "IBAN" in data or "salary" in data:
         salary, currency = separate_salary_currency(data.get("salary"))
         bank_data = {
@@ -130,7 +134,6 @@ def process_and_group_data(raw_message):
         }
         return bank_data
 
-    
     elif "IPv4" in data:
         net_data = {
             "address": data.get("address"),
@@ -138,14 +141,5 @@ def process_and_group_data(raw_message):
         }
         return net_data
 
-    # # Agrupar todos los datos en un solo registro
-    # grouped_data = {
-    #     "message": message,
-    #     "personal_data": personal_data,
-    #     "location_data": location_data,
-    #     "professional_data": professional_data,
-    #     "bank_data": bank_data,
-    #     "net_data": net_data
-    # }
-
-    # return grouped_data
+    # Si no hay ningún campo esperado en el mensaje, devolver un error manejable
+    return {"error": "No valid data found"}

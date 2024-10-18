@@ -1,5 +1,6 @@
 from extraction.kafkaconsumer import KafkaConsumer
-from loading.mongodbloader import MongoDBLoader  # Importar MongoDBLoader
+from loading.mongodbloader import MongoDBLoader
+from loading.sqldbloader import SQLloader
 import os
 
 if __name__ == "__main__":
@@ -9,9 +10,11 @@ if __name__ == "__main__":
 
     # Inicializa el loader de MongoDB
     mongo_loader = MongoDBLoader(uri=mongo_uri)
+    # Inicializa el loader de MongoDB
+    sql_loader = SQLloader()
 
     # Inicializa el consumidor de Kafka
-    kafka_consumer = KafkaConsumer(kafka_broker, "hrpro-group", mongo_loader)
+    kafka_consumer = KafkaConsumer(kafka_broker, "hrpro-group", mongo_loader, sql_loader)
 
-    # Comienza a consumir mensajes de Kafka y cargarlos en MongoDB
+    # Comienza a consumir mensajes de Kafka y cargarlos en las bases de datos
     kafka_consumer.start_consuming()
