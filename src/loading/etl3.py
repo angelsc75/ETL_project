@@ -1,193 +1,138 @@
 import json
 from pymongo import MongoClient
 import mysql.connector
-from mysql.connector import Error
 from concurrent.futures import ThreadPoolExecutor
 import threading
 import time
-
-# Configuraciones
-MONGO_URI = 'mongodb://localhost:27017/'
-MONGO_DB = 'hr_data'
-MONGO_COLLECTION = 'hr_data'
-MYSQL_CONFIG = {
-    'host': 'localhost',
-    'port': 3306,
-    'user': 'root',
-    'password': 'admin'
-}
-BATCH_SIZE = 1000
-PROCESSING_INTERVAL = 60  # segundos
+from collections import defaultdict
 
 # Lock para sincronización de threads
 lock = threading.Lock()
 
-def get_mysql_connection():
-    try:
-        conn = mysql.connector.connect(
-            host=MYSQL_CONFIG['host'],
-            user=MYSQL_CONFIG['user'],
-            password=MYSQL_CONFIG['password'],
-            database='hr_data'  # Selecciona la base de datos aquí
-        )
-        return conn
-    except Error as e:
-        print(f"Error connecting to MySQL: {e}")
-        return None
+# Conexión a MongoDB
+mongo_client = MongoClient('mongodb://localhost:27017/')
+mongo_db = mongo_client['hr_data']
+mongo_collection = mongo_db['hr_data']
 
-def setup_mysql_tables():
-    conn = get_mysql_connection()
-    if not conn:
-        return
+# Conexión a MySQL
+mysql_conn = mysql.connector.connect(
+    host="localhost",
+    port=3306,
+    user="root",
+    password="admin",
+    database="hr_data"
+)
+mysql_cursor = mysql_conn.cursor()
 
-    cursor = conn.cursor()
-    try:
-        # Crear tablas
-        create_personal_data_table = """
-        CREATE TABLE IF NOT EXISTS personal_data (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(100),
-            last_name VARCHAR(100),
-            fullname VARCHAR(201),
-            sex VARCHAR(10),
-            telfnumber VARCHAR(100),
-            passport VARCHAR(20),
-            email VARCHAR(100),
-            UNIQUE KEY unique_passport (passport),
-            UNIQUE KEY unique_fullname (fullname)
-        )
-        """
-        cursor.execute(create_personal_data_table)
+# Borrar y recrear la base de datos hr_data
+mysql_cursor.execute("DROP DATABASE IF EXISTS hr_data")
+mysql_cursor.execute("CREATE DATABASE hr_data")
+mysql_cursor.execute("USE hr_data")
 
-        create_location_table = """
-        CREATE TABLE IF NOT EXISTS location (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            fullname VARCHAR(200),
-            city VARCHAR(100),
-            address VARCHAR(200),
-            UNIQUE KEY unique_fullname_address (fullname, address),
-            INDEX idx_address (address)  -- Añadido el índice requerido
-        );
-        """
-        cursor.execute(create_location_table)
+# Reconectar a la base de datos hr_data
+mysql_conn.close()
+mysql_conn = mysql.connector.connect(
+    host="localhost",
+    port=3306,
+    user="root",
+    password="admin",
+    database="hr_data"
+)
+mysql_cursor = mysql_conn.cursor()
 
-        create_professional_data_table = """
-        CREATE TABLE IF NOT EXISTS professional_data (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            fullname VARCHAR(200),
-            company VARCHAR(100),
-            company_address VARCHAR(200),
-            company_telfnumber VARCHAR(100),
-            company_email VARCHAR(100),
-            job VARCHAR(200),
-            UNIQUE KEY unique_fullname (fullname)
-        );
-        """
-        cursor.execute(create_professional_data_table)
+# Crear tablas en MySQL si no existen
+# Tabla para location (debe crearse primero)
+create_location_table = """
+CREATE TABLE IF NOT EXISTS location (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    fullname VARCHAR(200),
+    city VARCHAR(100),
+    address VARCHAR(200),
+    UNIQUE KEY unique_fullname (fullname)
+);
+"""
+mysql_cursor.execute(create_location_table)
 
-        create_bank_data_table = """
-        CREATE TABLE IF NOT EXISTS bank_data (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            passport VARCHAR(20),
-            iban VARCHAR(34),
-            salary DECIMAL(10, 2),
-            FOREIGN KEY (passport) REFERENCES personal_data(passport)
-        );
-        """
-        cursor.execute(create_bank_data_table)
+# Añadir índice a la columna address en la tabla location
+add_address_index = """
+CREATE INDEX idx_address ON location(address);
+"""
+mysql_cursor.execute(add_address_index)
 
-        create_net_data_table = """
-        CREATE TABLE IF NOT EXISTS net_data (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            address VARCHAR(200),
-            ipv4 VARCHAR(15),
-            FOREIGN KEY (address) REFERENCES location(address)
-        );
-        """
-        cursor.execute(create_net_data_table)
+# Tabla para datos personales
+create_personal_data_table = """
+CREATE TABLE IF NOT EXISTS personal_data (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100),
+    last_name VARCHAR(100),
+    fullname VARCHAR(201),
+    sex VARCHAR(10),
+    telfnumber VARCHAR(100),
+    passport VARCHAR(20),
+    email VARCHAR(100),
+    location_id INT,  -- Permitimos que pueda ser NULL si no hay coincidencia
+    data_validity VARCHAR(50),
+    FOREIGN KEY (location_id) REFERENCES location(id)
+);
+"""
+mysql_cursor.execute(create_personal_data_table)
 
-        conn.commit()
-    except Error as e:
-        print(f"Error setting up MySQL tables: {e}")
-    finally:
-        cursor.close()
-        conn.close()
+create_passport_index = """
+CREATE INDEX idx_passport_personal_data ON personal_data(passport);
+"""
+mysql_cursor.execute(create_passport_index)
 
-def process_batch(batch):
-    conn = get_mysql_connection()
-    if not conn:
-        return
+create_fullname_location_index = """
+CREATE INDEX idx_fullname_location ON location(fullname);
+"""
+mysql_cursor.execute(create_fullname_location_index)
 
-    cursor = conn.cursor()
-    try:
-        personal_data = []
-        location_data = []
-        professional_data = []
-        bank_data = []
-        net_data = []
+create_fullname_personal_data_index = """
+CREATE INDEX idx_fullname_personal_data ON personal_data(fullname);
+"""
+mysql_cursor.execute(create_fullname_personal_data_index)
 
-        for documento in batch:
-            data = documento['data']
-            tipo = determinar_tipo_dato(data)
+create_professional_data_table = """
+CREATE TABLE IF NOT EXISTS professional_data (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    fullname VARCHAR(200),
+    company VARCHAR(100),
+    company_address VARCHAR(200),
+    company_telfnumber VARCHAR(100),
+    company_email VARCHAR(100),
+    job VARCHAR(200),
+    location_id INT,
+    UNIQUE KEY unique_fullname (fullname),
+    FOREIGN KEY (location_id) REFERENCES location(id)
+);
+"""
+mysql_cursor.execute(create_professional_data_table)
 
-            if tipo == 'personal':
-                personal_data.append((data['name'], data['last_name'], f"{data['name']} {data['last_name']}", 
-                                      data.get('sex'), data.get('telfnumber'), data.get('passport'), data.get('email')))
-            elif tipo == 'location':
-                location_data.append((data['fullname'], data.get('city'), data.get('address')))
-            elif tipo == 'profesional':
-                professional_data.append((data['fullname'], data.get('company'), data.get('company_address'),
-                                          data.get('company_telfnumber'), data.get('company_email'), data.get('job')))
-            elif tipo == 'bank':
-                bank_data.append((data.get('passport'), data.get('IBAN'), data.get('salary')))
-            elif tipo == 'net':
-                net_data.append((data.get('address'), data.get('IPv4')))
+create_bank_data_table = """
+CREATE TABLE IF NOT EXISTS bank_data (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    passport VARCHAR(20),
+    iban VARCHAR(34),
+    salary DECIMAL(10, 2),
+    FOREIGN KEY (passport) REFERENCES personal_data(passport)
+);
+"""
+mysql_cursor.execute(create_bank_data_table)
 
-        with lock:
-            if personal_data:
-                cursor.executemany("""
-                INSERT IGNORE INTO personal_data 
-                (name, last_name, fullname, sex, telfnumber, passport, email) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """, personal_data)
-
-            if location_data:
-                cursor.executemany("""
-                INSERT IGNORE INTO location 
-                (fullname, city, address) 
-                VALUES (%s, %s, %s)
-            """, location_data)
-
-            if professional_data:
-                cursor.executemany("""
-                INSERT IGNORE INTO professional_data
-                (fullname, company, company_address, company_telfnumber, company_email, job)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """, professional_data)
-
-            if bank_data:
-                cursor.executemany("""
-                INSERT IGNORE INTO bank_data
-                (passport, iban, salary)
-                VALUES(%s, %s, %s)
-            """, bank_data)
-
-            if net_data:
-                cursor.executemany("""
-                INSERT IGNORE INTO net_data
-                (address, ipv4)
-                VALUES(%s, %s)
-            """, net_data)
-
-        conn.commit()
-    except Error as e:
-        print(f"Error processing batch: {e}")
-        conn.rollback()
-    finally:
-        cursor.close()
-        conn.close()
+create_net_data_table = """
+CREATE TABLE IF NOT EXISTS net_data (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    address VARCHAR(200),
+    ipv4 VARCHAR(15),
+    FOREIGN KEY (address) REFERENCES location(address)
+);
+"""
+mysql_cursor.execute(create_net_data_table)
 
 def determinar_tipo_dato(data):
+    print("Data received:", data)
+    if not data:
+        return 'desconocido'
     if 'name' in data and 'last_name' in data:
         return 'personal'
     elif 'fullname' in data and 'city' in data:
@@ -201,68 +146,206 @@ def determinar_tipo_dato(data):
     else:
         return 'desconocido'
 
-def update_relations():
-    conn = get_mysql_connection()
-    if not conn:
-        return
+# Diccionario para contar las ocurrencias de pasaportes solo en personal_data
+personal_data_passport_counter = defaultdict(int)
 
-    cursor = conn.cursor()
-    try:
-        with lock:
-            cursor.execute("""
-            INSERT IGNORE INTO personal_location (personal_id, location_id)
-            SELECT pd.id, MIN(l.id)
-            FROM personal_data pd
-            LEFT JOIN personal_location pl ON pd.id = pl.personal_id
-            JOIN location l ON l.fullname LIKE CONCAT(pd.name, ' ', pd.last_name, '%')
-            WHERE pl.personal_id IS NULL
-            GROUP BY pd.id
-        """)
+def process_batch(batch, thread_id):
+    print(f"Thread {thread_id} starting to process batch of {len(batch)} items")
+    start_time = time.time()
+    
+    personal_data = []
+    location_data = []
+    professional_data = []
+    bank_data = []
+    net_data = []
+    
+    for documento in batch:
+        try:
+            data = json.loads(documento['data'])
+        except json.JSONDecodeError:
+            print(f"Error decoding JSON in document: {documento}")
+            continue
+        except KeyError:
+            print(f"No 'data' key found in document: {documento}")
+            continue
+        
+        tipo = determinar_tipo_dato(data)
+        print(f"Tipo de dato determinado: {tipo}")
+        
+        if tipo == 'personal':
+            name = data.get('name', '').strip() or "unknown"
+            last_name = data.get('last_name', '').strip() or "unknown"
+            fullname = f"{name} {last_name}".strip()
+            sex = data.get('sex')
+            if isinstance(sex, list):
+                sex = sex[0] if sex else None
+            elif not isinstance(sex, str):
+                sex = None
+                
+            telfnumber = data.get('telfnumber') if isinstance(data.get('telfnumber'), str) else None
+            passport = data.get('passport') if isinstance(data.get('passport'), str) else None
+            email = data.get('email') if isinstance(data.get('email'), str) else None
+            
+            # Solo incrementamos el contador, no determinamos la validez aquí
+            with lock:
+                personal_data_passport_counter[passport] += 1
+            
+            personal_data.append((name, last_name, fullname, sex, telfnumber, passport, email))
+            print(f"Datos personales agregados: {(name, last_name, fullname, sex, telfnumber, passport, email)}")
+        
+        elif tipo == 'location':
+            fullname = data.get('fullname', '').strip()
+            city = data.get('city') if isinstance(data.get('city'), str) else None
+            address = data.get('address') if isinstance(data.get('address'), str) else None
+            location_data.append((fullname, city, address))
+            print(f"Datos de ubicación agregados: {(fullname, city, address)}")
+        
+        elif tipo == 'profesional':
+            fullname = data.get('fullname', '').strip()
+            company = data.get('company') if isinstance(data.get('company'), str) else None
+            company_address = data.get('company address') if isinstance(data.get('company address'), str) else None
+            company_telfnumber = data.get('company_telfnumber') if isinstance(data.get('company_telfnumber'), str) else None
+            company_email = data.get('company_email') if isinstance(data.get('company_email'), str) else None
+            job = data.get('job') if isinstance(data.get('job'), str) else None
+            professional_data.append((fullname, company, company_address, company_telfnumber, company_email, job))
+            print(f"Datos profesionales agregados: {(fullname, company, company_address, company_telfnumber, company_email, job)}")
+        
+        elif tipo == 'bank':
+            passport = data.get('passport') if isinstance(data.get('passport'), str) else None
+            iban = data.get('IBAN') if isinstance(data.get('IBAN'), str) else None
+            salary = data.get('salary')
+            try:
+                salary = float(salary) if salary else None
+            except ValueError:
+                print(f"Error convirtiendo salario a float: {salary}")
+                salary = None
+            bank_data.append((passport, iban, salary))
+            print(f"Datos bancarios agregados: {(passport, iban, salary)}")
+        
+        elif tipo == 'net':
+            address = data.get('address') if isinstance(data.get('address'), str) else None
+            ipv4 = data.get('IPv4') if isinstance(data.get('IPv4'), str) else None
+            net_data.append((address, ipv4))
+            print(f"Datos de red agregados: {(address, ipv4)}")
 
-            cursor.execute("""
-            INSERT IGNORE INTO personal_professional (personal_id, professional_id)
-            SELECT pd.id, MIN(pr.id)
-            FROM personal_data pd
-            LEFT JOIN personal_professional pp ON pd.id = pp.personal_id
-            JOIN professional_data pr ON pr.fullname LIKE CONCAT(pd.name, ' ', pd.last_name, '%')
-            WHERE pp.personal_id IS NULL
-            GROUP BY pd.id
-        """)
-        conn.commit()
-    except Error as e:
-        print(f"Error updating relations: {e}")
-        conn.rollback()
-    finally:
-        cursor.close()
-        conn.close()
+    with lock:
+        try:
+            # Verificar la validez después de procesar todo el lote
+            for i, person in enumerate(personal_data):
+                passport = person[5]  # El pasaporte está en la posición 5 de la tupla
+                data_validity = "ok" if personal_data_passport_counter[passport] == 1 else "aviso posible fraude"
+                personal_data[i] = person + (data_validity,)
 
-def process_mongo_to_mysql():
-    try:
-        mongo_client = MongoClient(MONGO_URI)
-        mongo_db = mongo_client[MONGO_DB]
-        mongo_collection = mongo_db[MONGO_COLLECTION]
+            if location_data:
+                mysql_cursor.executemany("""
+                    INSERT IGNORE INTO location 
+                    (fullname, city, address) 
+                    VALUES (%s, %s, %s)
+                """, location_data)
+                print(f"Insertados {mysql_cursor.rowcount} registros en location")
 
-        last_processed_id = None
-        with ThreadPoolExecutor(max_workers=4) as executor:  # Ajusta el número de workers según tus necesidades
-            while True:
-                query = {} if last_processed_id is None else {'_id': {'$gt': last_processed_id}}
-                batch = list(mongo_collection.find(query).sort('_id', 1).limit(BATCH_SIZE))
+            if personal_data:
+                for person in personal_data:
+                    fullname = person[2]
+                    
+                    # Buscar coincidencias en location usando LIKE
+                    mysql_cursor.execute("""
+                        SELECT id FROM location 
+                        WHERE fullname LIKE CONCAT('%', %s, '%') 
+                        ORDER BY CHAR_LENGTH(fullname) ASC
+                    """, (fullname,))
+                    
+                    resultados = mysql_cursor.fetchall()
+                    if resultados:
+                        location_id = resultados[0][0]
+                        
+                        mysql_cursor.execute("""
+                            INSERT INTO personal_data 
+                            (name, last_name, fullname, sex, telfnumber, passport, email, location_id, data_validity) 
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        """, person[:7] + (location_id, person[7]))
+                    else:
+                        # Si no se encuentra una coincidencia, se deja location_id como NULL
+                        mysql_cursor.execute("""
+                            INSERT INTO personal_data 
+                            (name, last_name, fullname, sex, telfnumber, passport, email, data_validity) 
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                        """, person[:7] + (person[7],))
+                print(f"Insertados {mysql_cursor.rowcount} registros en personal_data")
 
-                if not batch:
-                    time.sleep(PROCESSING_INTERVAL)
-                    continue
+            if professional_data:
+                for prof_data in professional_data:
+                    fullname = prof_data[0]
+                    if fullname != 'ERROR_code23a34j!#':
+                        mysql_cursor.execute("SELECT id FROM location WHERE fullname = %s", (fullname,))
+                        location_id = mysql_cursor.fetchone()
+                        if location_id:
+                            mysql_cursor.execute("""
+                                INSERT IGNORE INTO professional_data
+                                (fullname, company, company_address, company_telfnumber, company_email, job, location_id)
+                                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                            """, prof_data + (location_id[0],))
+                    else:
+                        mysql_cursor.execute("""
+                            INSERT IGNORE INTO professional_data
+                            (fullname, company, company_address, company_telfnumber, company_email, job)
+                            VALUES (%s, %s, %s, %s, %s, %s)
+                        """, prof_data)
+                print(f"Insertados {mysql_cursor.rowcount} registros en professional_data")
+            
+            if bank_data:
+                mysql_cursor.executemany("""
+                    INSERT IGNORE INTO bank_data
+                    (passport, iban, salary)
+                    VALUES(%s, %s, %s)
+                """, bank_data)
+                print(f"Insertados {mysql_cursor.rowcount} registros en bank_data")
+                    
+            if net_data:
+                mysql_cursor.executemany("""
+                    INSERT IGNORE INTO net_data
+                    (address, ipv4)
+                    VALUES(%s, %s)
+                """, net_data)
+                print(f"Insertados {mysql_cursor.rowcount} registros en net_data")
+            
+            mysql_conn.commit()
+        except mysql.connector.Error as err:
+            print(f"Error de MySQL: {err}")
+            mysql_conn.rollback()
+    
+    end_time = time.time()
+    print(f"Thread {thread_id} finished processing batch in {end_time - start_time:.2f} seconds")
 
-                # Procesar cada lote en paralelo
-                future = executor.submit(process_batch, batch)
-                future.add_done_callback(lambda f: update_relations())
-
-                last_processed_id = batch[-1]['_id']
-                print(f"Processed batch up to ID: {last_processed_id}")
-    except Exception as e:
-        print(f"Error processing data from MongoDB: {e}")
-    finally:
-        mongo_client.close()
+def procesar_datos():
+    batch_size = 1000
+    batch = []
+    thread_count = 0
+    
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        for documento in mongo_collection.find():
+            batch.append(documento)
+            if len(batch) >= batch_size:
+                thread_count += 1
+                executor.submit(process_batch, batch, thread_count)
+                batch = []
+         
+        if batch:
+            thread_count += 1
+            executor.submit(process_batch, batch, thread_count)
+    
+    print(f"All {thread_count} threads have been submitted for processing")
+    
+    # Esperar a que todos los hilos terminen
+    executor.shutdown(wait=True)
+    print("All threads have completed execution")
 
 if __name__ == "__main__":
-    setup_mysql_tables()
-    process_mongo_to_mysql()
+    procesar_datos()
+
+    # Cerrar conexiones
+    mysql_cursor.close()
+    mysql_conn.close()
+    mongo_client.close()
+
+    print("ETL process completed successfully")
