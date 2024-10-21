@@ -69,7 +69,7 @@ class KafkaConsumer:
                 else:
                     # Procesar el mensaje recibido
                     raw_message  = msg.value().decode('utf-8')
-                    print(f"Mensaje recibido: {raw_message}")
+                    # print(f"Mensaje recibido: {raw_message}")
 
                     # Transformar el mensaje usando el datatransformer
                     transformed_data = process_and_group_data(raw_message)
