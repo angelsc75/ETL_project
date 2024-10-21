@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 
 class MongoDBLoader:
-    def __init__(self, uri="mongodb://adminUser:12345@localhost:27017/hr_data", db_name="hr_data", collection_name="data"):
+    def __init__(self, uri, db_name, collection_name):
         """
         Inicializa la conexión con MongoDB.
         
