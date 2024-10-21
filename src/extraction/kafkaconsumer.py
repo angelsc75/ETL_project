@@ -75,7 +75,7 @@ class KafkaConsumer:
                     transformed_data = process_and_group_data(raw_message)
                     self.message_buffer.append(transformed_data)
 
-                    # Guardar los datos transformados en MongoDB
+                    # Guardar los datos transformados
                     if len(self.message_buffer) >= self.batch_size:
                         self.save_messages()
 
@@ -122,7 +122,7 @@ class KafkaConsumer:
         Guarda el lote actual de mensajes en MongoDB y Postgres y maneja los errores si falla.
         """
         try:
-            # self.save_messages_mongo(self.message_buffer)
+            self.save_messages_mongo(self.message_buffer)
             self.save_messages_sql(self.message_buffer)
         except Exception as e:
             print(f"Exception as {e}:")
