@@ -6,20 +6,12 @@ from dotenv import main
 
 main.load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
-
-
-
-
-
-
 if __name__ == "__main__":
     # Configuraciones 
     kafka_broker = os.getenv('KAFKA_BROKER')
     mongo_uri = os.getenv('MONGO_URI')
     db_name= os.getenv('DB_NAME')
     collection_name= os.getenv('COLLECTION_NAME')
-
-
     db_type = os.getenv('DB_TYPE')
     db_host = os.getenv('DB_HOST')
     db_port = os.getenv('DB_PORT')
