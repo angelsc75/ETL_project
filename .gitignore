@@ -64,3 +64,8 @@ API/satisfation.db
 
 #db
 API/satisfaction.db
+
+
+#ignorar dotenv
+.env
+/.env
