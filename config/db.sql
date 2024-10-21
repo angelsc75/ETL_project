@@ -1,5 +1,5 @@
 -- ======================================
--- Script para crear las tablas en PostgreSQL según el modelo proporcionado
+-- Script para crear las tablas en PostgreSQL 
 -- ======================================
 
 -- Tabla de datos personales (Personal data)
@@ -10,7 +10,7 @@ CREATE TABLE hrpro.personal_data (
     fullname VARCHAR(200),
     sex CHAR(2),
     telfnumber VARCHAR(50),
-    passport VARCHAR(20) UNIQUE NOT NULL,  -- Relación por 'passport'
+    passport VARCHAR(20) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE,
     CONSTRAINT email_check CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
 );
@@ -18,9 +18,9 @@ CREATE TABLE hrpro.personal_data (
 -- Tabla de ubicación (Location data)
 CREATE TABLE hrpro.location_data (
     id SERIAL PRIMARY KEY,
-    fullname VARCHAR(200) UNIQUE NOT NULL,  -- Relación por 'fullname'
+    fullname VARCHAR(200) UNIQUE NOT NULL,
     city VARCHAR(100),
-    address VARCHAR(255) NOT NULL  -- Relación por 'address'
+    address VARCHAR(255) NOT NULL  
 );
 
 -- Tabla de datos profesionales (Professional data)
@@ -38,7 +38,7 @@ CREATE TABLE hrpro.professional_data (
 -- Tabla de datos bancarios (Bank Data)
 CREATE TABLE hrpro.bank_data (
     id SERIAL PRIMARY KEY,
-    passport VARCHAR(20) UNIQUE NOT NULL,  -- Relación por 'passport'
+    passport VARCHAR(20) UNIQUE NOT NULL,
     IBAN VARCHAR(34) UNIQUE NOT NULL,
     salary NUMERIC,
     currency VARCHAR(5),
@@ -48,7 +48,7 @@ CREATE TABLE hrpro.bank_data (
 -- Tabla de datos de red (Net Data)
 CREATE TABLE hrpro.net_data (
     id SERIAL PRIMARY KEY,
-    address VARCHAR(255) UNIQUE NOT NULL,  -- Relación por 'address'
+    address VARCHAR(255) UNIQUE NOT NULL,
     IPv4 VARCHAR(15) UNIQUE NOT NULL,
     CONSTRAINT ipv4_check CHECK (IPv4 ~* '^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')
 );
@@ -66,3 +66,40 @@ ALTER TABLE hrpro.bank_data ADD CONSTRAINT iban_format CHECK (IBAN ~* '^[A-Za-z0
 -- Restricción para asegurar que la dirección IPv4 tiene un formato válido
 ALTER TABLE hrpro.net_data ADD CONSTRAINT ipv4_format CHECK (IPv4 ~* '^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$');
 
+
+-- ======================================
+-- Script para crear la vista de personas
+-- ======================================
+
+CREATE OR REPLACE VIEW hrpro.person_full_data AS
+SELECT 
+    pd.id AS personal_id,
+    pd.name,
+    pd.last_name,
+    pd.fullname,
+    pd.sex,
+    pd.telfnumber,
+    pd.passport,
+    pd.email,
+    
+    ld.city AS location_city,
+    ld.address AS location_address,
+
+    profd.company AS company_name,
+    profd.company_address,
+    profd.company_telfnumber,
+    profd.company_email AS company_email,
+    profd.job AS job_title,
+
+    bd.IBAN AS bank_IBAN,
+    bd.salary AS salary_amount,
+    bd.currency AS salary_currency,
+
+    nd.IPv4 AS network_IPv4
+
+FROM hrpro.personal_data pd
+LEFT JOIN hrpro.location_data ld ON pd.fullname = ld.fullname
+LEFT JOIN hrpro.professional_data profd ON pd.fullname = profd.fullname
+LEFT JOIN hrpro.bank_data bd ON pd.passport = bd.passport
+LEFT JOIN hrpro.net_data nd ON ld.address = nd.address
+WHERE pd.fullname IS NOT NULL AND pd.fullname <> '';
