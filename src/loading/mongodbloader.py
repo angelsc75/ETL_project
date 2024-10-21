@@ -1,4 +1,5 @@
 from pymongo import MongoClient
+from logger import logger
 
 class MongoDBLoader:
     def __init__(self, uri, db_name, collection_name):
@@ -22,10 +23,12 @@ class MongoDBLoader:
         """
         try:
             result = self.collection.insert_many(data)
-            print(f"Datos guardados en MongoDB")
+            print("Datos guardados en MongoDB")
+            logger.info("Datos guardados en MongoDB")
             # print(f"Datos guardados en MongoDB con el ID: {result.inserted_ids}")
         except Exception as e:
             print(f"Ocurrió un error al insertar el documento: {e}")
+            logger.error(f"Ocurrió un error al insertar el documento: {e}")
             raise e  # Relanzar la excepción para manejarla en el flujo principal
 
     def close(self):

@@ -2,6 +2,7 @@ from confluent_kafka import Consumer, KafkaError
 from confluent_kafka.admin import AdminClient
 from transformation.datatransformer import process_and_group_data  # Importar la función de transformación
 import json
+from logger import logger
 
 class KafkaConsumer:
     
@@ -39,6 +40,7 @@ class KafkaConsumer:
         # Paso 1: Obtener la lista de tópicos
         metadata = self.admin_client.list_topics(timeout=10)
         print("Tópicos disponibles:")
+        logger.info("Tópicos disponibles:")
         
         for topic in metadata.topics:
             print(f"Tópico: {topic}")
@@ -46,6 +48,7 @@ class KafkaConsumer:
         # Obtener el primer tópico encontrado
         if not metadata.topics:
             print("No hay tópicos disponibles.")
+            logger.error("No hay tópicos disponibles.")
             return
 
         primer_topico = list(metadata.topics.keys())[0]
@@ -53,6 +56,7 @@ class KafkaConsumer:
         # Suscribir el consumidor al primer tópico
         self.consumer.subscribe([primer_topico])
         print(f"Suscrito al tópico: {primer_topico}")
+        logger.info(f"Suscrito al tópico: {primer_topico}")
 
         try:
             while True:
@@ -64,6 +68,7 @@ class KafkaConsumer:
                     if msg.error().code() == KafkaError._PARTITION_EOF:
                         # Fin de la partición
                         print("Fin de la partición")
+                        logger.error("Fin de la partición")
                     else:
                         print(f"Error: {msg.error()}")
                 else:
@@ -80,7 +85,7 @@ class KafkaConsumer:
                         self.save_messages()
 
         except KeyboardInterrupt:
-            pass
+            logger.error("KeyboardInterrupt")
         finally:
             # Guardar los mensajes restantes en el buffer antes de cerrar
             if self.message_buffer:
@@ -98,10 +103,10 @@ class KafkaConsumer:
             self.mongo_loader.load_to_mongodb(message_buffer)
         except Exception as e:
             print(f"Error al guardar en MongoDB: {e}")
+            logger.error(f"Error al guardar en MongoDB: {e}")
             # Guardar los mensajes fallidos en un archivo de log para procesarlos más tarde
-            with open('failed_messages.log', 'a') as log_file:
-                for message in message_buffer:
-                    log_file.write(json.dumps(message) + '\n')
+            for message in message_buffer:
+                logger.error(f"Mensaje fallido: {json.dumps(message)}\n")
         
     def save_messages_sql(self, message_buffer):
         """
@@ -111,11 +116,11 @@ class KafkaConsumer:
             print(f"Guardando {len(message_buffer)} mensajes en Postgres...")
             self.sql_loader.load_to_sql(message_buffer)
         except Exception as e:
-            print(f"Error al guardar en MongoDB: {e}")
+            print(f"Error al guardar en Postgres: {e}")
+            logger.error(f"Error al guardar en MongoDB: {e}")
             # Guardar los mensajes fallidos en un archivo de log para procesarlos más tarde
-            with open('failed_messages.log', 'a') as log_file:
-                for message in message_buffer:
-                    log_file.write(json.dumps(message) + '\n')
+            for message in message_buffer:
+                logger.error(f"Mensaje fallido: {json.dumps(message)}\n")
     
     def save_messages(self):
         """
@@ -125,7 +130,8 @@ class KafkaConsumer:
             self.save_messages_mongo(self.message_buffer)
             self.save_messages_sql(self.message_buffer)
         except Exception as e:
-            print(f"Exception as {e}:")
+            print(f"\nException as: {e}\n")
+            logger.error(f"Exception as: {e}\n")
         
         finally:
             # Limpiar el buffer después de guardar

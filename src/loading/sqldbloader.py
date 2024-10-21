@@ -1,5 +1,5 @@
 import psycopg2
-import logging
+from logger import logger
 
 class SQLloader:
     def __init__(self, host, database, user, password, port):
@@ -13,10 +13,6 @@ class SQLloader:
         self.port = port
         self.connection = None
         self.cursor = None
-
-        # Configurar logging para seguir eventos y errores
-        logging.basicConfig(level=logging.INFO)
-        self.logger = logging.getLogger(__name__)
 
     def load_to_sql(self, data_batch):
         """
@@ -38,7 +34,6 @@ class SQLloader:
                 # Personal Data
                 
                 if "sex" in data:
-                    print(f"LASTNAME: {data.get("last_name")}")
                     personal_data.append((
                         data.get("name"), 
                         data.get("last_name"), 
@@ -99,10 +94,10 @@ class SQLloader:
 
             # Confirmar las transacciones
             self.connection.commit()
-            self.logger.info(f"{len(data_batch)} registros procesados correctamente.")
+            logger.info(f"{len(data_batch)} registros procesados correctamente.")
             print("Datos guardados en Postgres")
         except Exception as e:
-            self.logger.error(f"Ocurrió un error al insertar los registros: {e}")
+            logger.error(f"Ocurrió un error al insertar los registros: {e}")
             self.connection.rollback()  # Hacer rollback si ocurre algún error
             raise e  # Relanzar la excepción para manejarla en el flujo principal
 
@@ -111,7 +106,6 @@ class SQLloader:
             self.close()
 
     def insert_personal_data(self, personal_data):
-        # print(F"DATOS PERSONALES {personal_data}")
         """
         Inserta datos personales en la tabla 'personal_data'.
         """
@@ -127,7 +121,7 @@ class SQLloader:
         email = EXCLUDED.email;
         """
         self.cursor.executemany(query, personal_data)
-        self.logger.info(f"{len(personal_data)} registros de datos personales insertados.")
+        logger.info(f"{len(personal_data)} registros de datos personales insertados.")
 
     def insert_location_data(self, location_data):
         """
@@ -141,7 +135,7 @@ class SQLloader:
         city = EXCLUDED.city;
         """
         self.cursor.executemany(query, location_data)
-        self.logger.info(f"{len(location_data)} registros de datos de ubicación insertados.")
+        logger.info(f"{len(location_data)} registros de datos de ubicación insertados.")
 
     def insert_professional_data(self, professional_data):
         """
@@ -158,7 +152,7 @@ class SQLloader:
         job = EXCLUDED.job;
         """
         self.cursor.executemany(query, professional_data)
-        self.logger.info(f"{len(professional_data)} registros de datos profesionales insertados.")
+        logger.info(f"{len(professional_data)} registros de datos profesionales insertados.")
 
     def insert_bank_data(self, bank_data):
         """
@@ -174,7 +168,7 @@ class SQLloader:
 
         """
         self.cursor.executemany(query, bank_data)
-        self.logger.info(f"{len(bank_data)} registros bancarios insertados.")
+        logger.info(f"{len(bank_data)} registros bancarios insertados.")
 
     def insert_net_data(self, net_data):
         """
@@ -187,7 +181,7 @@ class SQLloader:
         SET IPv4 = EXCLUDED.IPv4;
         """
         self.cursor.executemany(query, net_data)
-        self.logger.info(f"{len(net_data)} registros de datos de red insertados.")
+        logger.info(f"{len(net_data)} registros de datos de red insertados.")
 
     def connect(self):
         """
@@ -202,9 +196,9 @@ class SQLloader:
                 port=self.port
             )
             self.cursor = self.connection.cursor()
-            self.logger.info("Conexión establecida exitosamente.")
+            logger.info("Conexión establecida exitosamente.")
         except Exception as error:
-            self.logger.error(f"Error al conectar a la base de datos: {error}")
+            logger.error(f"Error al conectar a la base de datos: {error}")
             raise error  # Lanzar el error para que sea manejado externamente
 
     def close(self):
@@ -215,4 +209,4 @@ class SQLloader:
             self.cursor.close()
         if self.connection is not None:
             self.connection.close()
-        self.logger.info("Conexión cerrada.")
+        logger.info("Conexión cerrada.")
