@@ -22,7 +22,8 @@ class MongoDBLoader:
         """
         try:
             result = self.collection.insert_many(data)
-            print(f"Datos guardados en MongoDB con el ID: {result.inserted_ids}")
+            print(f"Datos guardados en MongoDB")
+            # print(f"Datos guardados en MongoDB con el ID: {result.inserted_ids}")
         except Exception as e:
             print(f"Ocurrió un error al insertar el documento: {e}")
             raise e  # Relanzar la excepción para manejarla en el flujo principal

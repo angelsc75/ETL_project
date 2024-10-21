@@ -2,7 +2,7 @@ import psycopg2
 import logging
 
 class SQLloader:
-    def __init__(self, host="localhost", database="hrpro", user="postgres", password="1234", port="5432"):
+    def __init__(self, host, database, user, password, port):
         """
         Inicializa los parámetros de conexión, pero no conecta inmediatamente.
         """
@@ -100,7 +100,7 @@ class SQLloader:
             # Confirmar las transacciones
             self.connection.commit()
             self.logger.info(f"{len(data_batch)} registros procesados correctamente.")
-
+            print("Datos guardados en Postgres")
         except Exception as e:
             self.logger.error(f"Ocurrió un error al insertar los registros: {e}")
             self.connection.rollback()  # Hacer rollback si ocurre algún error
