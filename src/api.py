@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from fastapi import FastAPI, Depends
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer,Float, String
 from sqlalchemy.future import select
 
 import os
@@ -11,7 +11,7 @@ from dotenv import main
 main.load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 # Obtener configuración de base de datos de las variables de entorno
-db_type = os.getenv('DB_TYPE')
+db_type = 'postgresql+asyncpg'
 db_host = os.getenv('DB_HOST')
 db_port = os.getenv('DB_PORT')
 db_name = os.getenv('DB_DB')
@@ -46,14 +46,32 @@ class MiVista(Base):
     __tablename__ = 'person_full_data'  # Nombre de la vista
     __table_args__ = {'schema': db_schema}  # Esquema donde se encuentra la vista
 
-    personal_id = Column(Integer, primary_key=True)  # pd.id
-    name = Column(String)  # pd.name
-    last_name = Column(String)  # pd.last_name
-    fullname = Column(String)  # pd.fullname
-    sex = Column(String)  # pd.sex
-    telfnumber = Column(String)  # pd.telfnumber
-    passport = Column(String)  # pd.passport
-    email = Column(String)  # pd.email
+    personal_id = Column(Integer, primary_key=True)
+    name = Column(String)
+    last_name = Column(String)
+    fullname = Column(String)
+    sex = Column(String)
+    telfnumber = Column(String)
+    passport = Column(String)
+    email = Column(String)
+    
+    location_city = Column(String)
+    location_address = Column(String)
+
+    company_name = Column(String)
+    company_address = Column(String)
+    company_telfnumber = Column(String)
+    company_email = Column(String)
+    job_title = Column(String)
+
+    bank_iban = Column(String)
+    salary_amount = Column(Integer)
+    salary_currency = Column(String)
+
+    network_ipv4 = Column(String)
+    
+
+    
 
 # Crear la instancia de FastAPI
 app = FastAPI()
