@@ -1,4 +1,4 @@
-import psycopg2
+import pg8000
 import logging
 
 class SQLloader:
@@ -36,9 +36,8 @@ class SQLloader:
             # Clasificar los registros según los datos que contienen
             for data in data_batch:
                 # Personal Data
-                
                 if "sex" in data:
-                    print(f"LASTNAME: {data.get("last_name")}")
+                    print(f"LASTNAME: {data.get('last_name')}")
                     personal_data.append((
                         data.get("name"), 
                         data.get("last_name"), 
@@ -85,7 +84,6 @@ class SQLloader:
                     ))
 
             # Insertar los datos en las tablas correspondientes
-            
             if personal_data:
                 self.insert_personal_data(personal_data)
             if location_data:
@@ -111,7 +109,6 @@ class SQLloader:
             self.close()
 
     def insert_personal_data(self, personal_data):
-        # print(F"DATOS PERSONALES {personal_data}")
         """
         Inserta datos personales en la tabla 'personal_data'.
         """
@@ -120,11 +117,11 @@ class SQLloader:
         VALUES (%s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (passport) DO UPDATE
         SET name = EXCLUDED.name,
-        last_name = EXCLUDED.last_name,
-        fullname = EXCLUDED.fullname,
-        sex = EXCLUDED.sex,
-        telfnumber = EXCLUDED.telfnumber,
-        email = EXCLUDED.email;
+            last_name = EXCLUDED.last_name,
+            fullname = EXCLUDED.fullname,
+            sex = EXCLUDED.sex,
+            telfnumber = EXCLUDED.telfnumber,
+            email = EXCLUDED.email;
         """
         self.cursor.executemany(query, personal_data)
         self.logger.info(f"{len(personal_data)} registros de datos personales insertados.")
@@ -138,7 +135,7 @@ class SQLloader:
         VALUES (%s, %s, %s)
         ON CONFLICT (fullname) DO UPDATE
         SET address = EXCLUDED.address,
-        city = EXCLUDED.city;
+            city = EXCLUDED.city;
         """
         self.cursor.executemany(query, location_data)
         self.logger.info(f"{len(location_data)} registros de datos de ubicación insertados.")
@@ -152,10 +149,10 @@ class SQLloader:
         VALUES (%s, %s, %s, %s, %s, %s)
         ON CONFLICT (fullname) DO UPDATE 
         SET company = EXCLUDED.company,
-        company_address = EXCLUDED.company_address,
-        company_telfnumber = EXCLUDED.company_telfnumber,
-        company_email = EXCLUDED.company_email,
-        job = EXCLUDED.job;
+            company_address = EXCLUDED.company_address,
+            company_telfnumber = EXCLUDED.company_telfnumber,
+            company_email = EXCLUDED.company_email,
+            job = EXCLUDED.job;
         """
         self.cursor.executemany(query, professional_data)
         self.logger.info(f"{len(professional_data)} registros de datos profesionales insertados.")
@@ -165,13 +162,12 @@ class SQLloader:
         Inserta datos bancarios en la tabla 'bank_data'.
         """
         query = """
-        INSERT INTO hrpro.bank_data (passport, IBAN, salary,currency)
-        VALUES (%s, %s, %s,%s)
+        INSERT INTO hrpro.bank_data (passport, IBAN, salary, currency)
+        VALUES (%s, %s, %s, %s)
         ON CONFLICT (passport) DO UPDATE 
         SET IBAN = EXCLUDED.IBAN,
-        salary = EXCLUDED.salary,
-        currency = EXCLUDED.currency;
-
+            salary = EXCLUDED.salary,
+            currency = EXCLUDED.currency;
         """
         self.cursor.executemany(query, bank_data)
         self.logger.info(f"{len(bank_data)} registros bancarios insertados.")
@@ -191,10 +187,10 @@ class SQLloader:
 
     def connect(self):
         """
-        Establece la conexión con la base de datos.
+        Establece la conexión con la base de datos usando pg8000.
         """
         try:
-            self.connection = psycopg2.connect(
+            self.connection = pg8000.connect(
                 host=self.host,
                 database=self.database,
                 user=self.user,
@@ -205,7 +201,7 @@ class SQLloader:
             self.logger.info("Conexión establecida exitosamente.")
         except Exception as error:
             self.logger.error(f"Error al conectar a la base de datos: {error}")
-            raise error  # Lanzar el error para que sea manejado externamente
+            raise error
 
     def close(self):
         """

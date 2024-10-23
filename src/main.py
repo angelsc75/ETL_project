@@ -29,7 +29,7 @@ if __name__ == "__main__":
     db_pass = os.getenv('DB_PASSWORD')
 
     # Inicializa el loader de MongoDB
-    mongo_loader = MongoDBLoader(uri=mongo_uri, db_name="hr_data", collection_name="data")
+    mongo_loader = MongoDBLoader(uri=mongo_uri, db_name=db_name, collection_name=collection_name)
     # Inicializa el loader de MongoDB
     sql_loader = SQLloader(host=db_host, database=db_name, 
     user=db_user, password=db_pass, port=db_port)
