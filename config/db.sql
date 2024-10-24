@@ -11,7 +11,7 @@ CREATE TABLE hrpro.personal_data (
     sex CHAR(2),
     telfnumber VARCHAR(50),
     passport VARCHAR(20) UNIQUE NOT NULL,
-    email VARCHAR(255) UNIQUE,
+    email VARCHAR(255),
     CONSTRAINT email_check CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
 );
 
@@ -41,7 +41,7 @@ CREATE TABLE hrpro.bank_data (
     passport VARCHAR(20) UNIQUE NOT NULL,
     IBAN VARCHAR(34) UNIQUE NOT NULL,
     salary NUMERIC,
-    currency VARCHAR(5),
+    currency VARCHAR(15),
     CONSTRAINT iban_check CHECK (IBAN ~* '^[A-Za-z0-9]+$')
 );
 
