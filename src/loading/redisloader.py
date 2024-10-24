@@ -18,7 +18,7 @@ class RedisLoader:
         """
         # Validación explícita del tamaño del buffer
         self.buffer_size = max(1000, buffer_size)  # Asegura mínimo 1000
-        # self.buffer_size = buffer_size if buffer_size > 0 else 5000
+       
         logger.info(f"🔧 Configurando buffer con tamaño: {self.buffer_size}")
         print(f"🔧 Configurando buffer con tamaño: {self.buffer_size}")
         
