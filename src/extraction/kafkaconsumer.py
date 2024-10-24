@@ -4,8 +4,9 @@ from transformation.datatransformer import process_and_group_data
 import json
 from logger import logger
 
+
 class KafkaConsumer:
-    def __init__(self, bootstrap_servers, group_id, redis_loader, mongo_loader, sql_loader, batch_size=100):
+    def __init__(self, bootstrap_servers, group_id, redis_loader, mongo_loader, sql_loader, batch_size=1000):
         """
         Inicializa el consumidor de Kafka y los loaders.
         """
