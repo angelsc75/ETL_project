@@ -2,6 +2,7 @@ from confluent_kafka import Consumer, KafkaError
 from confluent_kafka.admin import AdminClient
 from transformation.datatransformer import process_and_group_data
 import json
+from logger import logger
 
 class KafkaConsumer:
     def __init__(self, bootstrap_servers, group_id, redis_loader, mongo_loader, sql_loader, batch_size=100):
@@ -30,27 +31,6 @@ class KafkaConsumer:
         self.message_count = 0
 
     def start_consuming(self):
-<<<<<<< Updated upstream
-        # Paso 1: Obtener la lista de tópicos
-        metadata = self.admin_client.list_topics(timeout=10)
-        print("Tópicos disponibles:")
-        
-        for topic in metadata.topics:
-            print(f"Tópico: {topic}")
-
-        # Obtener el primer tópico encontrado
-        if not metadata.topics:
-            print("No hay tópicos disponibles.")
-            return
-
-        primer_topico = list(metadata.topics.keys())[0]
-
-        # Suscribir el consumidor al primer tópico
-        self.consumer.subscribe([primer_topico])
-        print(f"Suscrito al tópico: {primer_topico}")
-
-=======
->>>>>>> Stashed changes
         try:
             metadata = self.admin_client.list_topics(timeout=10)
             available_topics = list(metadata.topics.keys())
@@ -74,13 +54,8 @@ class KafkaConsumer:
                     
                 if msg.error():
                     if msg.error().code() == KafkaError._PARTITION_EOF:
-<<<<<<< Updated upstream
-                        # Fin de la partición
-                        print("Fin de la partición")
-=======
                         logger.warning("⚠️ Fin de la partición")
                         print("⚠️ Fin de la partición")
->>>>>>> Stashed changes
                     else:
                         logger.error(f"❌ Error Kafka: {msg.error()}")
                         print(f"❌ Error Kafka: {msg.error()}")
@@ -111,15 +86,11 @@ class KafkaConsumer:
                         logger.error(f"Mensaje que causó el error: {raw_message}")
 
         except KeyboardInterrupt:
-<<<<<<< Updated upstream
-            pass
-=======
             logger.info("👋 Deteniendo el consumidor por interrupción del usuario")
             print("👋 Deteniendo el consumidor por interrupción del usuario")
         except Exception as e:
             logger.error(f"❌ Error general en el consumidor: {e}")
             print(f"❌ Error general en el consumidor: {e}")
->>>>>>> Stashed changes
         finally:
             logger.info("🔄 Procesando mensajes finales...")
             print("🔄 Procesando mensajes finales...")
@@ -151,13 +122,6 @@ class KafkaConsumer:
                 print("⚠️ No hay datos para procesar en el batch")
                 
         except Exception as e:
-<<<<<<< Updated upstream
-            print(f"Error al guardar en MongoDB: {e}")
-            # Guardar los mensajes fallidos en un archivo de log para procesarlos más tarde
-            with open('failed_messages.log', 'a') as log_file:
-                for message in message_buffer:
-                    log_file.write(json.dumps(message) + '\n')
-=======
             logger.error(f"❌ Error al procesar el batch: {e}")
             print(f"❌ Error al procesar el batch: {e}")
 
@@ -179,7 +143,6 @@ class KafkaConsumer:
         except Exception as e:
             logger.error(f"❌ Error al guardar en MongoDB: {e}")
             print(f"❌ Error al guardar en MongoDB: {e}")
->>>>>>> Stashed changes
         
     def save_messages_sql(self, message_buffer):
         try:
@@ -189,29 +152,6 @@ class KafkaConsumer:
             logger.info("✅ Datos guardados exitosamente en PostgreSQL")
             print("✅ Datos guardados exitosamente en PostgreSQL")
         except Exception as e:
-<<<<<<< Updated upstream
-            print(f"Error al guardar en MongoDB: {e}")
-            # Guardar los mensajes fallidos en un archivo de log para procesarlos más tarde
-            with open('failed_messages.log', 'a') as log_file:
-                for message in message_buffer:
-                    log_file.write(json.dumps(message) + '\n')
-    
-    def save_messages(self):
-        """
-        Guarda el lote actual de mensajes en MongoDB y Postgres y maneja los errores si falla.
-        """
-        try:
-            self.save_messages_mongo(self.message_buffer)
-            self.save_messages_sql(self.message_buffer)
-        except Exception as e:
-            print(f"Exception as {e}:")
-        
-        finally:
-            # Limpiar el buffer después de guardar
-            self.message_buffer = []
-
-# Esta clase es llamada e inicializada desde main.py, no directamente desde aquí.
-=======
             logger.error(f"❌ Error al guardar en PostgreSQL: {e}")
             print(f"❌ Error al guardar en PostgreSQL: {e}")
             for message in message_buffer:
@@ -220,4 +160,3 @@ class KafkaConsumer:
                 if '_id' in safe_message:
                     safe_message['_id'] = str(safe_message['_id'])  # Convertir ObjectId a string
                 logger.error(f"Mensaje fallido: {json.dumps(safe_message)}")
->>>>>>> Stashed changes
