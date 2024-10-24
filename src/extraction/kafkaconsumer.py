@@ -43,7 +43,7 @@ class KafkaConsumer:
                 print("❌ No hay tópicos disponibles")
                 return
 
-            primer_topico = "probando"
+            primer_topico = list(metadata.topics.keys())[0]
             self.consumer.subscribe([primer_topico])
             logger.info(f"✅ Suscrito al tópico: {primer_topico}")
             print(f"✅ Suscrito al tópico: {primer_topico}")
