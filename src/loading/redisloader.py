@@ -3,7 +3,7 @@ import json
 import zlib
 import time
 from datetime import datetime
-from logger import logger
+from src.logger import logger
 
 class RedisLoader:
     def __init__(self, host='localhost', port=6379, db=0, buffer_size=5000):
