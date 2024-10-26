@@ -1,7 +1,7 @@
-from extraction.kafkaconsumer import KafkaConsumer
-from loading.mongodbloader import MongoDBLoader
-from loading.sqldbloader import SQLloader
-from loading.redisloader import RedisLoader
+from src.extraction.kafkaconsumer import KafkaConsumer
+from src.loading.mongodbloader import MongoDBLoader
+from src.loading.sqldbloader import SQLloader
+from src.loading.redisloader import RedisLoader
 import os
 from dotenv import main
 
