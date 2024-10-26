@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-from logger import logger
+from src.logger import logger
 
 class MongoDBLoader:
     def __init__(self, uri, db_name, collection_name):
