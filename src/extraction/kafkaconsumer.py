@@ -1,8 +1,8 @@
 from confluent_kafka import Consumer, KafkaError
 from confluent_kafka.admin import AdminClient
-from transformation.datatransformer import process_and_group_data
+from src.transformation.datatransformer import process_and_group_data
 import json
-from logger import logger
+from src.logger import logger
 
 
 class KafkaConsumer:
