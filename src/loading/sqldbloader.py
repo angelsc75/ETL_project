@@ -1,5 +1,5 @@
 import psycopg2
-from logger import logger
+from src.logger import logger
 
 class SQLloader:
     def __init__(self, host, database, user, password, port):
