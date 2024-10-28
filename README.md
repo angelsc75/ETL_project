@@ -36,7 +36,7 @@ The goal of this project is to implement a robust and scalable data management s
 - **Streamlit**: To create an interactive, web-based dashboard for data exploration and visualization.
 - **FastAPI**: For building a fast, efficient REST API to serve data endpoints.
 - **GitHub**: Version control and collaboration.
-- **Project Management**: Kanban board in Trello (or similar) for task tracking and project management.
+- **Project Management**: Kanban board in Jira for task tracking and project management.
 
 ## Project Structure
 
