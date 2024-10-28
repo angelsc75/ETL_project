@@ -52,14 +52,10 @@ The goal of this project is to implement a robust and scalable data management s
 │   ├── api_documentation.md
 │   ├── architecture_diagram.png
 │   ├── data_model.md
-├── monitoring/                    # New folder for exporters
+├── monitoring/
 │   ├── kafka/
-│   │   ├── jmx_prometheus_javaagent.jar  # JMX Exporter agent for Kafka
-│   │   └── kafka_jmx_config.yaml         # JMX Exporter configuration file
-│   ├── redis/
-│   │   └── redis_exporter          # Binary or Docker setup for Redis Exporter
-│   ├── mongodb/
-│   │   └── mongodb_exporter        # Binary or Docker setup for MongoDB Exporter
+│   │   ├── jmx_prometheus_javaagent.jar  # JMX Exporter agent for Kafka (needed for JVM applications)
+│   │   └── kafka_jmx_config.yaml         # JMX Exporter configuration file for Kafka
 ├── src/
 │   ├── extraction/
 │   │   └── kafkaconsumer.py
@@ -74,6 +70,7 @@ The goal of this project is to implement a robust and scalable data management s
 ├── tests/
 │   └── test_cases.py
 └── prometheus.yml                  # Prometheus configuration file for scraping the exporters
+                # Prometheus configuration file for scraping the exporters
 
 ```
 
