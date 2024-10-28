@@ -2,37 +2,44 @@
 
 Welcome to the **HR Pro Data Management System** repository! This project, developed by the G7 Data Engineering, is a comprehensive data engineering solution for **HR Pro**, a prominent human resources company. The system is designed to organize and analyze vast amounts of HR data efficiently, integrating various data sources such as job applications, payroll records, and employee surveys.
 
-Project Overview
+Here's the expanded text including **Streamlit** and **FastAPI** components:
+
+---
+
+## Project Overview
 The goal of this project is to implement a robust and scalable data management system tailored to the needs of HR Pro. Our solution facilitates the efficient collection, transformation, and storage of data, leveraging advanced data engineering tools and techniques. The key objectives include:
 
-Designing an ETL process to unify and process diverse data sources.
-Organizing and storing data in both MongoDB and SQL databases.
-Deploying the solution within a Dockerized environment to ensure scalability, ease of maintenance, and portability.
-User Interface for Data Exploration: Integrating a Streamlit application to provide an interactive, visual dashboard for HR Pro to analyze key metrics.
-API for Data Access: Implementing a FastAPI application to expose key data endpoints, allowing for smooth integration with external systems and applications.
-Key Features
-Data Integration: Seamlessly integrates multiple data sources, including structured and unstructured data.
-ETL Pipeline: Extracts, transforms, and loads data into MongoDB and SQL databases.
-Scalability: Uses Docker and Docker Compose for a fully containerized deployment.
-Real-Time Processing: Utilizes Apache Kafka for efficient real-time data ingestion and streaming.
-Data Storage: Stores data in MongoDB for unstructured records and in a SQL data warehouse for structured information.
-Documentation and Usability: A thoroughly documented and user-friendly system, ensuring HR Pro can manage and analyze their HR data effortlessly.
-Interactive Dashboard: Uses Streamlit to provide a dashboard for data visualization and HR insights.
-API Access: Provides a FastAPI-based API for secure and efficient access to data, enabling integration with other HR systems.
-Technologies Used
+- **Designing an ETL process** to unify and process diverse data sources.
+- **Organizing and storing data** in both MongoDB and SQL databases.
+- **Deploying the solution** within a Dockerized environment to ensure scalability, ease of maintenance, and portability.
+- **User Interface for Data Exploration**: Integrating a Streamlit application to provide an interactive, visual dashboard for HR Pro to analyze key metrics.
+- **API for Data Access**: Implementing a FastAPI application to expose key data endpoints, allowing for smooth integration with external systems and applications.
 
-Apache Kafka: For real-time data ingestion and streaming.
-Docker & Docker Compose: For containerization and orchestration of services.
-MongoDB: For flexible data storage of unstructured data.
-SQL Database: For structured data storage and analytics.
-Streamlit: To create an interactive, web-based dashboard for data exploration and visualization.
-FastAPI: For building a fast, efficient REST API to serve data endpoints.
-GitHub: Version control and collaboration.
-Project Management: Kanban board in Trello (or similar) for task tracking and project management.
-Project Structure
+## Key Features
 
+- **Data Integration**: Seamlessly integrates multiple data sources, including structured and unstructured data.
+- **ETL Pipeline**: Extracts, transforms, and loads data into MongoDB and SQL databases.
+- **Scalability**: Uses Docker and Docker Compose for a fully containerized deployment.
+- **Real-Time Processing**: Utilizes Apache Kafka for efficient real-time data ingestion and streaming.
+- **Data Storage**: Stores data in MongoDB for unstructured records and in a SQL data warehouse for structured information.
+- **Documentation and Usability**: A thoroughly documented and user-friendly system, ensuring HR Pro can manage and analyze their HR data effortlessly.
+- **Interactive Dashboard**: Uses Streamlit to provide a dashboard for data visualization and HR insights.
+- **API Access**: Provides a FastAPI-based API for secure and efficient access to data, enabling integration with other HR systems.
 
+## Technologies Used
 
+- **Apache Kafka**: For real-time data ingestion and streaming.
+- **Docker & Docker Compose**: For containerization and orchestration of services.
+- **MongoDB**: For flexible data storage of unstructured data.
+- **SQL Database**: For structured data storage and analytics.
+- **Streamlit**: To create an interactive, web-based dashboard for data exploration and visualization.
+- **FastAPI**: For building a fast, efficient REST API to serve data endpoints.
+- **GitHub**: Version control and collaboration.
+- **Project Management**: Kanban board in Trello (or similar) for task tracking and project management.
+
+## Project Structure
+
+```
 ├── data-extraction/               # Scripts and modules for data extraction from various sources
 ├── data-transformation/           # ETL logic for data transformation
 ├── docker-compose.yml             # Docker Compose file for orchestrating services
@@ -45,11 +52,9 @@ Project Structure
 │   └── fastapi_app/               # FastAPI application for providing data access endpoints
 ├── docs/                          # Documentation and guides for setup, usage, and contribution
 └── README.md                      # Project overview and usage guide
-
-
+```
 
 This structure allows HR Pro to not only process and store data efficiently but also to access and visualize it in meaningful ways through Streamlit and FastAPI.
-
 ### Description of Key Folders and Files:
 
 - **docker/**: Contains Docker configurations.
