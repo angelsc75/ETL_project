@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from fastapi import FastAPI, Depends
-from sqlalchemy import Column, Integer,Float, String
+from fastapi import FastAPI, Depends, Query
+from sqlalchemy import Column, Integer, Float, String, or_, func
 from sqlalchemy.future import select
 import os
 from dotenv import main
@@ -21,7 +21,6 @@ db_pass = os.getenv('DB_PASSWORD')
 # Construir URL de conexión a la base de datos
 DATABASE_URL = f"{db_type}://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
 
-# Crear instancia de FastAPI
 print(f"Conectando a la base de datos: {DATABASE_URL}")
 
 # Crear motor de conexión a la base de datos
@@ -83,11 +82,47 @@ app = FastAPI()
 async def read_root():
     return {"message": "Bienvenido a la API de FastAPI con PostgreSQL"}
 
-# Ruta para obtener los datos de la vista
+# Nueva ruta para obtener el conteo de registros
+@app.get("/count")
+async def get_row_count(db: AsyncSession = Depends(get_db)):
+    try:
+        query = select(func.count()).select_from(MiVista)
+        result = await db.execute(query)
+        count = result.scalar()
+        return {"total_rows": count}
+    except Exception as e:
+        return {"error": str(e)}
+
+# Ruta para obtener todos los datos de la vista
 @app.get("/vista")
 async def get_data_from_view(db: AsyncSession = Depends(get_db)):
     try:
         query = select(MiVista).limit(100)
+        result = await db.execute(query)
+        return result.scalars().all()
+    except Exception as e:
+        return {"error": str(e)}
+
+# Ruta para búsquedas
+@app.get("/search")
+async def search_data(
+    search_term: str = Query(None, description="Término de búsqueda"),
+    db: AsyncSession = Depends(get_db)
+):
+    try:
+        if not search_term:
+            return []
+            
+        query = select(MiVista).where(
+            or_(
+                MiVista.name.ilike(f"%{search_term}%"),
+                MiVista.last_name.ilike(f"%{search_term}%"),
+                MiVista.fullname.ilike(f"%{search_term}%"),
+                MiVista.telfnumber.ilike(f"%{search_term}%"),
+                MiVista.passport.ilike(f"%{search_term}%")
+            )
+        ).limit(100)
+        
         result = await db.execute(query)
         return result.scalars().all()
     except Exception as e:
