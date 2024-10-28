@@ -1,134 +1,180 @@
-from confluent_kafka import Consumer, KafkaError
-from confluent_kafka.admin import AdminClient
-from transformation.datatransformer import process_and_group_data  # Importar la función de transformación
+from confluent_kafka import Consumer, KafkaError     # Cliente Kafka para consumo de mensajes
+from confluent_kafka.admin import AdminClient        # Cliente admin para gestionar tópicos
+from src.transformation.datatransformer import process_and_group_data  # Procesamiento de datos
 import json
+from src.logger import logger                       # Logger personalizado para el sistema
+
 
 class KafkaConsumer:
-    
-    def __init__(self, bootstrap_servers, group_id, mongo_loader, sql_loader, batch_size=100):
+    def __init__(self, bootstrap_servers, group_id, redis_loader, mongo_loader, sql_loader):
         """
-        Inicializa el consumidor de Kafka y el cliente de MongoDB.
+        Constructor del consumidor Kafka que inicializa las conexiones y loaders.
         
-        :param bootstrap_servers: Dirección y puerto del servidor Kafka.
-        :param group_id: Grupo de consumidores de Kafka.
-        :param mongo_loader: Instancia de MongoDBLoader para cargar los mensajes en MongoDB.
-        :param batch_size: Tamaño del lote para guardado en MongoDB.
+        Args:
+            bootstrap_servers (str): Dirección del servidor Kafka
+            group_id (str): ID del grupo de consumidores
+            redis_loader (RedisLoader): Gestor del buffer temporal
+            mongo_loader (MongoDBLoader): Gestor de almacenamiento en MongoDB
+            sql_loader (SQLloader): Gestor de almacenamiento en PostgreSQL
         """
+        # Configuración básica del consumidor Kafka
         self.conf = {
-            'bootstrap.servers': bootstrap_servers,
-            'group.id': group_id,
-            'auto.offset.reset': 'earliest',
+            'bootstrap.servers': bootstrap_servers,  # Servidor(es) Kafka
+            'group.id': group_id,                   # ID del grupo de consumidores
+            'auto.offset.reset': 'earliest',        # Comenzar desde el mensaje más antiguo
         }
-        # Crear el consumidor
-        self.consumer = Consumer(self.conf)
         
-        # Crear el cliente de administración de Kafka
-        self.admin_conf = {
-            'bootstrap.servers': bootstrap_servers,
-        }
-        self.admin_client = AdminClient(self.admin_conf)
+        try:
+            # Inicializar el consumidor y el cliente admin
+            self.consumer = Consumer(self.conf)
+            self.admin_client = AdminClient({'bootstrap.servers': bootstrap_servers})
+            logger.info(f"✅ Conexión exitosa a Kafka en {bootstrap_servers}")
+            print(f"✅ Conexión exitosa a Kafka en {bootstrap_servers}")
+        except Exception as e:
+            logger.error(f"❌ Error al conectar con Kafka: {e}")
+            print(f"❌ Error al conectar con Kafka: {e}")
+            raise e
 
-        # Loader para MongoDB
-        self.mongo_loader = mongo_loader  # Pasamos el loader de MongoDB desde main.py
-        # Loader para MongoDB
-        self.sql_loader = sql_loader  # Pasamos el loader de MongoDB desde main.py
-        self.batch_size = batch_size  # Tamaño del lote para guardar
-        self.message_buffer = []  # Buffer para acumular mensajes en memoria
+        # Almacenar referencias a los loaders
+        self.redis_loader = redis_loader      # Buffer temporal
+        self.mongo_loader = mongo_loader      # Almacenamiento NoSQL
+        self.sql_loader = sql_loader          # Almacenamiento SQL
+        self.message_count = 0                # Contador de mensajes procesados
 
     def start_consuming(self):
-        # Paso 1: Obtener la lista de tópicos
-        metadata = self.admin_client.list_topics(timeout=10)
-        print("Tópicos disponibles:")
-        
-        for topic in metadata.topics:
-            print(f"Tópico: {topic}")
-
-        # Obtener el primer tópico encontrado
-        if not metadata.topics:
-            print("No hay tópicos disponibles.")
-            return
-
-        primer_topico = list(metadata.topics.keys())[0]
-
-        # Suscribir el consumidor al primer tópico
-        self.consumer.subscribe([primer_topico])
-        print(f"Suscrito al tópico: {primer_topico}")
-
+        """
+        Inicia el proceso de consumo continuo de mensajes.
+        Este método es el punto principal de procesamiento.
+        """
         try:
+            # Obtener lista de tópicos disponibles
+            metadata = self.admin_client.list_topics(timeout=10)
+            available_topics = list(metadata.topics.keys())
+            logger.info(f"📋 Tópicos disponibles: {available_topics}")
+            print(f"📋 Tópicos disponibles: {available_topics}")
+            
+            # Verificar si hay tópicos disponibles
+            if not available_topics:
+                logger.error("❌ No hay tópicos disponibles")
+                print("❌ No hay tópicos disponibles")
+                return
+
+            # Suscribirse al primer tópico disponible
+            primer_topico = available_topics[0]
+            self.consumer.subscribe([primer_topico])
+            logger.info(f"✅ Suscrito al tópico: {primer_topico}")
+            print(f"✅ Suscrito al tópico: {primer_topico}")
+
+            # Bucle principal de consumo
             while True:
-                msg = self.consumer.poll(1.0)  # Poll the topic
+                # Intentar obtener un mensaje (timeout 1 segundo)
+                msg = self.consumer.poll(1.0)
+                
+                # Si no hay mensaje, continuar al siguiente ciclo
                 if msg is None:
                     continue
+                    
+                # Manejar errores de Kafka
                 if msg.error():
-                    # Manejar el error del mensaje
                     if msg.error().code() == KafkaError._PARTITION_EOF:
-                        # Fin de la partición
-                        print("Fin de la partición")
+                        logger.warning("⚠️ Fin de la partición")
+                        print("⚠️ Fin de la partición")
                     else:
-                        print(f"Error: {msg.error()}")
-                else:
+                        logger.error(f"❌ Error Kafka: {msg.error()}")
+                        print(f"❌ Error Kafka: {msg.error()}")
+                    continue
+
+                # Incrementar contador de mensajes y logging periódico
+                self.message_count += 1
+                if self.message_count % 1000 == 0:
+                    logger.info(f"📨 Mensajes procesados: {self.message_count}")
+                    print(f"📨 Mensajes procesados: {self.message_count}")
+
+                try:
                     # Procesar el mensaje recibido
-                    raw_message  = msg.value().decode('utf-8')
-                    # print(f"Mensaje recibido: {raw_message}")
+                    raw_message = msg.value().decode('utf-8')  # Decodificar mensaje
+                    transformed_data = process_and_group_data(raw_message)  # Transformar datos
 
-                    # Transformar el mensaje usando el datatransformer
-                    transformed_data = process_and_group_data(raw_message)
-                    self.message_buffer.append(transformed_data)
+                    # Si no hay error en la transformación
+                    if "error" not in transformed_data:
+                        # Añadir al buffer de Redis
+                        buffer_full = self.redis_loader.add_to_buffer(transformed_data)
+                        
+                        # Si el buffer está lleno, procesar el lote
+                        if buffer_full:
+                            logger.info("🔄 Buffer lleno - Iniciando procesamiento del batch")
+                            print("🔄 Buffer lleno - Iniciando procesamiento del batch")
+                            self.process_batch()
+                    else:
+                        logger.warning(f"⚠️ Mensaje inválido: {transformed_data['error']}")
+                        print(f"⚠️ Mensaje inválido: {transformed_data['error']}")
 
-                    # Guardar los datos transformados
-                    if len(self.message_buffer) >= self.batch_size:
-                        self.save_messages()
+                except Exception as e:
+                    logger.error(f"❌ Error al procesar mensaje: {e}")
+                    print(f"❌ Error al procesar mensaje: {e}")
+                    logger.error(f"Mensaje que causó el error: {raw_message}")
 
         except KeyboardInterrupt:
-            pass
+            logger.info("👋 Deteniendo el consumidor por interrupción del usuario")
+            print("👋 Deteniendo el consumidor por interrupción del usuario")
         finally:
-            # Guardar los mensajes restantes en el buffer antes de cerrar
-            if self.message_buffer:
-                self.save_messages()
-            # Cerrar el consumidor y la conexión a MongoDB
+            self.cleanup()
+
+    def process_batch(self):
+        """
+        Procesa un lote completo de mensajes desde el buffer Redis.
+        Los datos se guardan en MongoDB y PostgreSQL.
+        """
+        try:
+            # Obtener datos del buffer
+            batch_data = self.redis_loader.get_buffer_batch()
+            
+            # Verificar si hay datos para procesar
+            if not batch_data:
+                logger.warning("⚠️ No hay datos para procesar en el batch")
+                print("⚠️ No hay datos para procesar en el batch")
+                return
+
+            logger.info(f"📦 Procesando batch de {len(batch_data)} mensajes")
+            print(f"📦 Procesando batch de {len(batch_data)} mensajes")
+            
+            # Guardar datos en MongoDB
+            self.mongo_loader.load_to_mongodb(batch_data)
+            logger.info(f"✅ Datos guardados en MongoDB")
+            
+            # Guardar datos en PostgreSQL
+            self.sql_loader.load_to_sql(batch_data)
+            logger.info(f"✅ Datos guardados en PostgreSQL")
+            
+            logger.info("✅ Batch procesado exitosamente")
+            print("✅ Batch procesado exitosamente")
+            
+        except Exception as e:
+            logger.error(f"❌ Error al procesar el batch: {e}")
+            print(f"❌ Error al procesar el batch: {e}")
+            raise e
+
+    def cleanup(self):
+        """
+        Realiza la limpieza final antes de cerrar el consumidor.
+        Procesa mensajes pendientes y cierra conexiones.
+        """
+        try:
+            logger.info("🧹 Iniciando limpieza...")
+            print("🧹 Iniciando limpieza...")
+            
+            # Procesar mensajes finales pendientes
+            logger.info("🔄 Procesando mensajes finales...")
+            print("🔄 Procesando mensajes finales...")
+            self.process_batch()
+            
+            # Cerrar todas las conexiones
             self.consumer.close()
+            self.redis_loader.close()
             self.mongo_loader.close()
-
-    def save_messages_mongo(self, message_buffer):
-        """
-        Guarda el lote actual de mensajes en MongoDB y maneja los errores si falla.
-        """
-        try:
-            print(f"Guardando {len(message_buffer)} mensajes en MongoDB...")
-            self.mongo_loader.load_to_mongodb(message_buffer)
+            
+            logger.info("✅ Limpieza completada exitosamente")
+            print("✅ Limpieza completada exitosamente")
         except Exception as e:
-            print(f"Error al guardar en MongoDB: {e}")
-            # Guardar los mensajes fallidos en un archivo de log para procesarlos más tarde
-            with open('failed_messages.log', 'a') as log_file:
-                for message in message_buffer:
-                    log_file.write(json.dumps(message) + '\n')
-        
-    def save_messages_sql(self, message_buffer):
-        """
-        Guarda el lote actual de mensajes en Postgres y maneja los errores si falla.
-        """
-        try:
-            print(f"Guardando {len(message_buffer)} mensajes en Postgres...")
-            self.sql_loader.load_to_sql(message_buffer)
-        except Exception as e:
-            print(f"Error al guardar en MongoDB: {e}")
-            # Guardar los mensajes fallidos en un archivo de log para procesarlos más tarde
-            with open('failed_messages.log', 'a') as log_file:
-                for message in message_buffer:
-                    log_file.write(json.dumps(message) + '\n')
-    
-    def save_messages(self):
-        """
-        Guarda el lote actual de mensajes en MongoDB y Postgres y maneja los errores si falla.
-        """
-        try:
-            self.save_messages_mongo(self.message_buffer)
-            self.save_messages_sql(self.message_buffer)
-        except Exception as e:
-            print(f"Exception as {e}:")
-        
-        finally:
-            # Limpiar el buffer después de guardar
-            self.message_buffer = []
-
-# Esta clase es llamada e inicializada desde main.py, no directamente desde aquí.
+            logger.error(f"❌ Error durante la limpieza: {e}")
+            print(f"❌ Error durante la limpieza: {e}")
