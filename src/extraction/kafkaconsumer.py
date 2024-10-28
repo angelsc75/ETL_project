@@ -1,8 +1,9 @@
-from confluent_kafka import Consumer, KafkaError     # Cliente Kafka para consumo de mensajes
-from confluent_kafka.admin import AdminClient        # Cliente admin para gestionar tópicos
+from confluent_kafka import Consumer, Producer  # Cliente Kafka para consumo de mensajes
+from confluent_kafka.admin import  AdminClient        # Cliente admin para gestionar tópicos
 from src.transformation.datatransformer import process_and_group_data  # Procesamiento de datos
 import json
 from src.logger import logger                       # Logger personalizado para el sistema
+import os
 
 
 class KafkaConsumer:
@@ -18,15 +19,22 @@ class KafkaConsumer:
             sql_loader (SQLloader): Gestor de almacenamiento en PostgreSQL
         """
         # Configuración básica del consumidor Kafka
-        self.conf = {
-            'bootstrap.servers': bootstrap_servers,  # Servidor(es) Kafka
-            'group.id': group_id,                   # ID del grupo de consumidores
-            'auto.offset.reset': 'earliest',        # Comenzar desde el mensaje más antiguo
+        kafka_host = os.getenv('KAFKA_HOST', 'kafka')  # Por defecto usar 'kafka' como hostname
+        kafka_port = os.getenv('KAFKA_PORT', '29092')
+        self.bootstrap_servers = f"{kafka_host}:{kafka_port}"
+
+        self.config = {
+            'bootstrap.servers': self.bootstrap_servers,
+            'group.id': 'mi-grupo',
+            'auto.offset.reset': 'earliest'
         }
-        
+
+        self.consumer = Consumer(self.config)
+        self.producer = Producer({'bootstrap.servers': self.bootstrap_servers})
+        self.admin_client = AdminClient({'bootstrap.servers': self.bootstrap_servers})
         try:
             # Inicializar el consumidor y el cliente admin
-            self.consumer = Consumer(self.conf)
+            self.consumer = Consumer(self.config)
             self.admin_client = AdminClient({'bootstrap.servers': bootstrap_servers})
             logger.info(f"✅ Conexión exitosa a Kafka en {bootstrap_servers}")
             print(f"✅ Conexión exitosa a Kafka en {bootstrap_servers}")
