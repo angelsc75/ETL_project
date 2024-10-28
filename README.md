@@ -86,49 +86,79 @@ This structure allows HR Pro to not only process and store data efficiently but 
 
 This structure organizes your ETL pipeline efficiently by separating extraction, transformation, and loading stages while including Docker and test files for containerization and testing.
 
-Getting Started
+Here’s the updated **Getting Started** section with steps for setting up Streamlit and FastAPI applications:
+
+---
+
+## Getting Started
+
 To get a copy of this project up and running on your local machine, follow these instructions.
 
-Prerequisites
+### Prerequisites
+
 Ensure you have Docker and Docker Compose installed on your machine.
 
-Clone this repository:
+1. **Clone this repository:**
 
-git clone https://github.com/DataTechSolutions/HRPro-Data-Management-System.git
-cd HRPro-Data-Management-System
-Create and configure the environment variables by copying the .env.example file:
+   ```bash
+   git clone https://github.com/DataTechSolutions/HRPro-Data-Management-System.git
+   cd HRPro-Data-Management-System
+   ```
 
+2. **Create and configure the environment variables** by copying the `.env.example` file:
 
-cp .env.example .env
-Update .env with your own configuration details, such as database credentials.
+   ```bash
+   cp .env.example .env
+   ```
 
-Installation
-Start Docker Containers: Run the following command to start all services using Docker Compose.
+3. **Update `.env`** with your own configuration details, such as database credentials and API keys.
 
+### Installation
 
-docker-compose up -d
-Initialize Databases: Once services are up, initialize MongoDB and SQL database schema by running the setup scripts:
+1. **Start Docker Containers**: Run the following command to start all services, including the ETL pipeline, Streamlit, and FastAPI applications, using Docker Compose.
 
-bash
+   ```bash
+   docker-compose up -d
+   ```
 
-# Commands to initialize databases, if applicable
-Run the ETL Pipeline: Start the ETL pipeline to begin processing and ingesting data.
+2. **Initialize Databases**: Once services are up, initialize MongoDB and SQL database schema by running the setup scripts.
 
-bash
+   ```bash
+   # Commands to initialize databases, if applicable
+   ```
 
-# Commands to initiate ETL process
-Usage
-Data Ingestion: Data is ingested in real-time via Kafka, processed in the ETL pipeline, and stored in MongoDB and SQL databases.
-Querying Data: Use MongoDB queries for unstructured data and SQL queries for structured data analysis.
-Scaling: The system is designed to be easily scalable, utilizing Docker containers for flexible deployments.
-Examples
-For example usage, refer to the docs/examples directory, which includes sample queries and API requests.
+3. **Run the ETL Pipeline**: Start the ETL pipeline to begin processing and ingesting data.
 
-Contributing
+   ```bash
+   # Commands to initiate ETL process
+   ```
+
+4. **Access the Streamlit Dashboard**: After starting the containers, access the interactive Streamlit dashboard by opening [http://localhost:8501](http://localhost:8501) in your browser.
+
+5. **Access the FastAPI Application**: The FastAPI application, providing API endpoints for data access, will be accessible at [http://localhost:8000](http://localhost:8000). Visit [http://localhost:8000/docs](http://localhost:8000/docs) to view and interact with the API documentation.
+
+### Usage
+
+- **Data Ingestion**: Data is ingested in real-time via Kafka, processed in the ETL pipeline, and stored in MongoDB and SQL databases.
+- **Querying Data**: Use MongoDB queries for unstructured data and SQL queries for structured data analysis.
+- **Interactive Dashboard**: Use the Streamlit dashboard to visualize and explore HR metrics and insights.
+- **Data API Access**: Use FastAPI endpoints to retrieve data programmatically, allowing for integration with other HR systems.
+- **Scaling**: The system is designed to be easily scalable, utilizing Docker containers for flexible deployments.
+
+### Examples
+
+For example usage, refer to the `docs/examples` directory, which includes sample queries, API requests, and instructions for using the Streamlit dashboard.
+
+## Contributing
+
 We welcome contributions to this project! If you'd like to contribute:
 
-Fork the repository.
-Create a new branch (git checkout -b feature-branch).
-Commit your changes (git commit -m 'Add feature').
-Push to the branch (git push origin feature-branch).
-Create a pull request.
+1. **Fork the repository.**
+2. **Create a new branch** (`git checkout -b feature-branch`).
+3. **Commit your changes** (`git commit -m 'Add feature'`).
+4. **Push to the branch** (`git push origin feature-branch`).
+5. **Create a pull request.**
+
+--- 
+
+This setup ensures all components, including the ETL, Streamlit dashboard, and FastAPI, are fully operational for development and exploration.
