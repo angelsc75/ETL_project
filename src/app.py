@@ -52,12 +52,30 @@ def format_dataframe(data):
 
 # Cargar y mostrar la imagen del encabezado
 try:
-    image = Image.open("header_image.png")
+    image = Image.open("./src/assets/header_image.png")
+    st.markdown(
+    """
+    <style>
+        header.stAppHeader {
+            background: transparent;
+        }
+        .stAppToolbar {
+            background: #fff;
+            border-radius: 11px;
+            padding: 6px 5px;
+        }
+        div[data-testid="stImageContainer"] img {
+            width: 100vw !important;
+            margin-left: -5rem;
+            margin-top: -7rem;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
     st.image(image, use_column_width=True)
 except FileNotFoundError:
-    st.warning("Header image not found. Please add 'header_image.png' to the project directory.")
-
-st.title("HR PRO")
+    st.warning(f"Header image not found. Please add 'header_image.png' to the project directory.")
 
 # Mostrar el contador con actualización automática
 count = get_row_count()
