@@ -40,18 +40,39 @@ The goal of this project is to implement a robust and scalable data management s
 ## Project Structure
 
 ```
-├── data-extraction/               # Scripts and modules for data extraction from various sources
-├── data-transformation/           # ETL logic for data transformation
-├── docker-compose.yml             # Docker Compose file for orchestrating services
-├── src/                           # Source code for the ETL pipeline
-│   ├── kafka/                     # Kafka configuration and setup
-│   ├── mongodb/                   # MongoDB database configuration
-│   ├── sql-db/                    # SQL database configuration and schema
-│   ├── etl/                       # Core ETL processes and data ingestion scripts
-│   ├── streamlit_app/             # Streamlit application for interactive data visualization
-│   └── fastapi_app/               # FastAPI application for providing data access endpoints
-├── docs/                          # Documentation and guides for setup, usage, and contribution
-└── README.md                      # Project overview and usage guide
+├── config/
+│   ├── db.py
+│   ├── db.sql
+├── docker/
+│   ├── docker-compose.yml         # Defines the containerized services, including exporters
+│   ├── Dockerfile
+├── docs/
+│   ├── api_documentation.md
+│   ├── architecture_diagram.png
+│   ├── data_model.md
+├── monitoring/                    # New folder for exporters
+│   ├── kafka/
+│   │   ├── jmx_prometheus_javaagent.jar  # JMX Exporter agent for Kafka
+│   │   └── kafka_jmx_config.yaml         # JMX Exporter configuration file
+│   ├── redis/
+│   │   └── redis_exporter          # Binary or Docker setup for Redis Exporter
+│   ├── mongodb/
+│   │   └── mongodb_exporter        # Binary or Docker setup for MongoDB Exporter
+├── src/
+│   ├── extraction/
+│   │   └── kafkaconsumer.py
+│   ├── loading/
+│   │   ├── mongodbloader.py
+│   │   ├── redisloader.py
+│   │   └── sqldbloader.py
+│   ├── transformation/
+│   │   ├── transformations.py
+│   │   └── logger.py
+│   └── main.py
+├── tests/
+│   └── test_cases.py
+└── prometheus.yml                  # Prometheus configuration file for scraping the exporters
+
 ```
 
 This structure allows HR Pro to not only process and store data efficiently but also to access and visualize it in meaningful ways through Streamlit and FastAPI.
