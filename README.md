@@ -20,6 +20,7 @@ Documentation and Usability: A thoroughly documented and user-friendly system, e
 Interactive Dashboard: Uses Streamlit to provide a dashboard for data visualization and HR insights.
 API Access: Provides a FastAPI-based API for secure and efficient access to data, enabling integration with other HR systems.
 Technologies Used
+
 Apache Kafka: For real-time data ingestion and streaming.
 Docker & Docker Compose: For containerization and orchestration of services.
 MongoDB: For flexible data storage of unstructured data.
@@ -29,8 +30,9 @@ FastAPI: For building a fast, efficient REST API to serve data endpoints.
 GitHub: Version control and collaboration.
 Project Management: Kanban board in Trello (or similar) for task tracking and project management.
 Project Structure
-bash
-Copy code
+
+
+
 ├── data-extraction/               # Scripts and modules for data extraction from various sources
 ├── data-transformation/           # ETL logic for data transformation
 ├── docker-compose.yml             # Docker Compose file for orchestrating services
@@ -43,6 +45,9 @@ Copy code
 │   └── fastapi_app/               # FastAPI application for providing data access endpoints
 ├── docs/                          # Documentation and guides for setup, usage, and contribution
 └── README.md                      # Project overview and usage guide
+
+
+
 This structure allows HR Pro to not only process and store data efficiently but also to access and visualize it in meaningful ways through Streamlit and FastAPI.
 
 ### Description of Key Folders and Files:
@@ -84,13 +89,10 @@ Ensure you have Docker and Docker Compose installed on your machine.
 
 Clone this repository:
 
-bash
-Copy code
 git clone https://github.com/DataTechSolutions/HRPro-Data-Management-System.git
 cd HRPro-Data-Management-System
 Create and configure the environment variables by copying the .env.example file:
 
-bash
 
 cp .env.example .env
 Update .env with your own configuration details, such as database credentials.
@@ -98,7 +100,6 @@ Update .env with your own configuration details, such as database credentials.
 Installation
 Start Docker Containers: Run the following command to start all services using Docker Compose.
 
-bash
 
 docker-compose up -d
 Initialize Databases: Once services are up, initialize MongoDB and SQL database schema by running the setup scripts:
