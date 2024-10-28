@@ -3,7 +3,6 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from fastapi import FastAPI, Depends
 from sqlalchemy import Column, Integer,Float, String
 from sqlalchemy.future import select
-
 import os
 from dotenv import main
 
@@ -39,7 +38,10 @@ Base = declarative_base()
 # Función para obtener sesión
 async def get_db():
     async with async_session() as session:
-        yield session
+        try:
+            yield session
+        finally:
+            await session.close()
 
 # Definir tu modelo basado en la vista de PostgreSQL
 class MiVista(Base):
@@ -84,6 +86,9 @@ async def read_root():
 # Ruta para obtener los datos de la vista
 @app.get("/vista")
 async def get_data_from_view(db: AsyncSession = Depends(get_db)):
-    query = select(MiVista).limit(100)  # Limitar la consulta a los primeros 100 registros
-    result = await db.execute(query)
-    return result.scalars().all()
+    try:
+        query = select(MiVista).limit(100)
+        result = await db.execute(query)
+        return result.scalars().all()
+    except Exception as e:
+        return {"error": str(e)}
