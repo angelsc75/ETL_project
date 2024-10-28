@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from fastapi import FastAPI, Depends, Query
-from sqlalchemy import Column, Integer, Float, String, or_, func
+from fastapi import FastAPI, Depends, HTTPException, Query
+from sqlalchemy import Column, Integer, Float, String, create_engine, or_, func, text
 from sqlalchemy.future import select
 import os
 from dotenv import main
@@ -76,6 +76,16 @@ class MiVista(Base):
 
 # Crear la instancia de FastAPI
 app = FastAPI()
+
+@app.get("/health")
+async def health_check():
+    try:
+        # Verificar conexión con PostgreSQL
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+        return {"status": "healthy", "database": "connected"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Ruta para la raíz del servidor
 @app.get("/")

@@ -1,0 +1,14 @@
+FROM prom/prometheus:latest
+
+# Crear el directorio para la configuración si no existe
+RUN mkdir -p /etc/prometheus
+
+# Copiar el archivo de configuración local al contenedor
+COPY prometheus.yml /etc/prometheus/prometheus.yml
+
+# Verificar la configuración al iniciar
+ENTRYPOINT [ "/bin/prometheus" ]
+CMD [ "--config.file=/etc/prometheus/prometheus.yml", \
+      "--storage.tsdb.path=/prometheus", \
+      "--web.console.libraries=/usr/share/prometheus/console_libraries", \
+      "--web.console.templates=/usr/share/prometheus/consoles" ]

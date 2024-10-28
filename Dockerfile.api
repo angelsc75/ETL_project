@@ -2,10 +2,24 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
-COPY .env .
-COPY . .
+# Instalar dependencias del sistema necesarias
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
 
+# Copiar solo los requisitos primero para aprovechar la caché de Docker
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["uvicorn", "main:api", "--host", "0.0.0.0", "--port", "8000"]
+# Copiar el resto de los archivos
+COPY . .
+
+# Asegurar que el puerto 8000 esté disponible
+EXPOSE 8000
+
+# Script de inicio simple
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
+
+CMD ["/start.sh"]

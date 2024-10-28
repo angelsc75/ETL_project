@@ -74,12 +74,16 @@ services:
       - "8000:8000"
     depends_on:
       - postgres
-      - mongodb
     environment:
-      - MONGO_HOST=mongodb
       - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_DB=${DB_DB}
+      - DB_SCHEMA=${DB_SCHEMA}
     env_file:
       - .env
+    restart: unless-stopped
 
   streamlit:
     build:
