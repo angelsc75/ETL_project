@@ -170,6 +170,96 @@ Ensure you have Docker and Docker Compose installed on your machine.
 
 For example usage, refer to the `docs/examples` directory, which includes sample queries, API requests, and instructions for using the Streamlit dashboard.
 
+
+
+For integrating **Prometheus exporters** into your project to monitor Kafka, Redis, and MongoDB:
+
+### 1. **Selecting Files from Each Exporter Repository**
+
+   - **Kafka Exporter (prometheus/jmx_exporter)**:
+     - Download the latest **`jmx_prometheus_javaagent.jar`** file from the [Releases](https://github.com/prometheus/jmx_exporter/releases) section. This is the core agent that enables Prometheus to collect JMX metrics from Kafka.
+     - Create or adapt a **JMX exporter configuration YAML** file. The repository usually includes example configurations you can use as a starting point.
+   
+   - **Redis Exporter (oliver006/redis_exporter)**:
+     - Download the **binary executable** for the Redis Exporter or set it up as a Docker container. The binary can be found in the [Releases](https://github.com/oliver006/redis_exporter/releases) section.
+     - No additional configuration files are necessary unless you want to specify custom Redis metrics. 
+
+   - **MongoDB Exporter (percona/mongodb_exporter)**:
+     - Use the **binary executable** or Docker image available in the [Releases](https://github.com/percona/mongodb_exporter/releases). This provides essential MongoDB metrics out of the box.
+     - MongoDB Exporter supports some optional configurations, but for basic monitoring, the default setup should suffice.
+
+
+
+### 3. **Updating the `docker-compose.yml` for Exporters**
+
+   - **Add services for each exporter** in your `docker-compose.yml` file to ensure Prometheus can access them:
+   
+   ```yaml
+   version: '3'
+   services:
+     kafka:
+       image: confluentinc/cp-kafka
+       environment:
+         KAFKA_JMX_OPTS: "-javaagent:/monitoring/kafka/jmx_prometheus_javaagent.jar=7071:/monitoring/kafka/kafka_jmx_config.yaml"
+       volumes:
+         - ./monitoring/kafka:/monitoring/kafka
+
+     redis:
+       image: redis:latest
+     redis_exporter:
+       image: oliver006/redis_exporter
+       ports:
+         - "9121:9121"
+       depends_on:
+         - redis
+
+     mongodb:
+       image: mongo:latest
+     mongodb_exporter:
+       image: percona/mongodb_exporter
+       ports:
+         - "9216:9216"
+       environment:
+         MONGODB_URI: "mongodb://mongodb:27017"
+       depends_on:
+         - mongodb
+
+     prometheus:
+       image: prom/prometheus
+       volumes:
+         - ./prometheus.yml:/etc/prometheus/prometheus.yml
+       ports:
+         - "9090:9090"
+   ```
+
+   - **Configure Prometheus to scrape metrics** by adding targets for each exporter in `prometheus.yml`:
+
+   ```yaml
+   scrape_configs:
+     - job_name: 'kafka'
+       static_configs:
+         - targets: ['kafka:7071']
+
+     - job_name: 'redis'
+       static_configs:
+         - targets: ['redis_exporter:9121']
+
+     - job_name: 'mongodb'
+       static_configs:
+         - targets: ['mongodb_exporter:9216']
+   ```
+
+### 4. **How It Will Work Together**
+
+- When the containers are up and running, **Prometheus** will scrape metrics from each exporter:
+- **Kafka JMX Exporter** will expose Kafka metrics on port 7071.
+- **Redis Exporter** will expose Redis metrics on port 9121.
+- **MongoDB Exporter** will expose MongoDB metrics on port 9216.
+- **Prometheus** will aggregate these metrics, allowing you to monitor Kafka, Redis, and MongoDB through a unified dashboard.
+- Optionally, you can use **Grafana** to visualize these metrics by connecting it to Prometheus for more flexible dashboards and alerts.
+
+This setup provides you with a scalable monitoring structure where each exporter runs as a containerized service, accessible and configurable through Prometheus. Let me know if you'd like further help on any configuration specifics!
+
 ## Contributing
 
 We welcome contributions to this project! If you'd like to contribute:
