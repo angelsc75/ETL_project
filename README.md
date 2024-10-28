@@ -2,73 +2,48 @@
 
 Welcome to the **HR Pro Data Management System** repository! This project, developed by the G7 Data Engineering, is a comprehensive data engineering solution for **HR Pro**, a prominent human resources company. The system is designed to organize and analyze vast amounts of HR data efficiently, integrating various data sources such as job applications, payroll records, and employee surveys.
 
-## Project Overview
-
+Project Overview
 The goal of this project is to implement a robust and scalable data management system tailored to the needs of HR Pro. Our solution facilitates the efficient collection, transformation, and storage of data, leveraging advanced data engineering tools and techniques. The key objectives include:
 
-- Designing an ETL process to unify and process diverse data sources.
-- Organizing and storing data in both MongoDB and SQL databases.
-- Deploying the solution within a Dockerized environment to ensure scalability, ease of maintenance, and portability.
-
-## Key Features
-
-- **Data Integration**: Seamlessly integrates multiple data sources, including structured and unstructured data.
-- **ETL Pipeline**: Extracts, transforms, and loads data into MongoDB and SQL databases.
-- **Scalability**: Uses Docker and Docker Compose for a fully containerized deployment.
-- **Real-Time Processing**: Utilizes Apache Kafka for efficient real-time data ingestion and streaming.
-- **Data Storage**: Stores data in MongoDB for unstructured records and in a SQL data warehouse for structured information.
-- **Documentation and Usability**: A thoroughly documented and user-friendly system, ensuring HR Pro can manage and analyze their HR data effortlessly.
-
-## Technologies Used
-
-- **Apache Kafka**: For real-time data ingestion and streaming.
-- **Redis**: As an in-memory cache layer, holding frequently accessed or real-time data to reduce load on primary databases.
-- **Docker & Docker Compose**: For containerization and orchestration of services.
-- **MongoDB**: For flexible data storage of unstructured data.
-- **SQL Database**: For structured data storage and analytics.
-- **GitHub**: Version control and collaboration.
-- **Project Management**: Kanban board in Jira for task tracking and project management.
-
-
-
-```
-DATA-ENGINEERING-EDUCATIONAL-PROJECT/
-│
-├── controllers/
-│   └── __pycache__/
-│
-├── docker/
-│   ├── docker-compose.yml
-│   └── dockerfile
-│
-├── docs/
-│
-├── src/
-│   ├── extraction/
-│   │   ├── __init__.py
-│   │   └── kafkaconsumer.py
-│   │
-│   ├── loading/
-│   │   ├── __init__.py
-│   │   ├── mongodbloader.py
-│   │   └── sqldbloader.py
-│   │
-│   ├── transformation/
-│   │   ├── __init__.py
-│   │   └── main.py
-│
-│   ├── tests/
-│   │   ├── __init__.py
-│   │   ├── test_extraction.py
-│   │   ├── test_loading.py
-│   │   └── test_transformation.py
-│
-├── .env
-├── .gitignore
-├── README.md
-├── requirements.txt
-└── src.zip
-```
+Designing an ETL process to unify and process diverse data sources.
+Organizing and storing data in both MongoDB and SQL databases.
+Deploying the solution within a Dockerized environment to ensure scalability, ease of maintenance, and portability.
+User Interface for Data Exploration: Integrating a Streamlit application to provide an interactive, visual dashboard for HR Pro to analyze key metrics.
+API for Data Access: Implementing a FastAPI application to expose key data endpoints, allowing for smooth integration with external systems and applications.
+Key Features
+Data Integration: Seamlessly integrates multiple data sources, including structured and unstructured data.
+ETL Pipeline: Extracts, transforms, and loads data into MongoDB and SQL databases.
+Scalability: Uses Docker and Docker Compose for a fully containerized deployment.
+Real-Time Processing: Utilizes Apache Kafka for efficient real-time data ingestion and streaming.
+Data Storage: Stores data in MongoDB for unstructured records and in a SQL data warehouse for structured information.
+Documentation and Usability: A thoroughly documented and user-friendly system, ensuring HR Pro can manage and analyze their HR data effortlessly.
+Interactive Dashboard: Uses Streamlit to provide a dashboard for data visualization and HR insights.
+API Access: Provides a FastAPI-based API for secure and efficient access to data, enabling integration with other HR systems.
+Technologies Used
+Apache Kafka: For real-time data ingestion and streaming.
+Docker & Docker Compose: For containerization and orchestration of services.
+MongoDB: For flexible data storage of unstructured data.
+SQL Database: For structured data storage and analytics.
+Streamlit: To create an interactive, web-based dashboard for data exploration and visualization.
+FastAPI: For building a fast, efficient REST API to serve data endpoints.
+GitHub: Version control and collaboration.
+Project Management: Kanban board in Trello (or similar) for task tracking and project management.
+Project Structure
+bash
+Copy code
+├── data-extraction/               # Scripts and modules for data extraction from various sources
+├── data-transformation/           # ETL logic for data transformation
+├── docker-compose.yml             # Docker Compose file for orchestrating services
+├── src/                           # Source code for the ETL pipeline
+│   ├── kafka/                     # Kafka configuration and setup
+│   ├── mongodb/                   # MongoDB database configuration
+│   ├── sql-db/                    # SQL database configuration and schema
+│   ├── etl/                       # Core ETL processes and data ingestion scripts
+│   ├── streamlit_app/             # Streamlit application for interactive data visualization
+│   └── fastapi_app/               # FastAPI application for providing data access endpoints
+├── docs/                          # Documentation and guides for setup, usage, and contribution
+└── README.md                      # Project overview and usage guide
+This structure allows HR Pro to not only process and store data efficiently but also to access and visualize it in meaningful ways through Streamlit and FastAPI.
 
 ### Description of Key Folders and Files:
 
@@ -100,3 +75,54 @@ DATA-ENGINEERING-EDUCATIONAL-PROJECT/
   - `src.zip`: A zipped version of the source code. 
 
 This structure organizes your ETL pipeline efficiently by separating extraction, transformation, and loading stages while including Docker and test files for containerization and testing.
+
+Getting Started
+To get a copy of this project up and running on your local machine, follow these instructions.
+
+Prerequisites
+Ensure you have Docker and Docker Compose installed on your machine.
+
+Clone this repository:
+
+bash
+Copy code
+git clone https://github.com/DataTechSolutions/HRPro-Data-Management-System.git
+cd HRPro-Data-Management-System
+Create and configure the environment variables by copying the .env.example file:
+
+bash
+
+cp .env.example .env
+Update .env with your own configuration details, such as database credentials.
+
+Installation
+Start Docker Containers: Run the following command to start all services using Docker Compose.
+
+bash
+
+docker-compose up -d
+Initialize Databases: Once services are up, initialize MongoDB and SQL database schema by running the setup scripts:
+
+bash
+
+# Commands to initialize databases, if applicable
+Run the ETL Pipeline: Start the ETL pipeline to begin processing and ingesting data.
+
+bash
+
+# Commands to initiate ETL process
+Usage
+Data Ingestion: Data is ingested in real-time via Kafka, processed in the ETL pipeline, and stored in MongoDB and SQL databases.
+Querying Data: Use MongoDB queries for unstructured data and SQL queries for structured data analysis.
+Scaling: The system is designed to be easily scalable, utilizing Docker containers for flexible deployments.
+Examples
+For example usage, refer to the docs/examples directory, which includes sample queries and API requests.
+
+Contributing
+We welcome contributions to this project! If you'd like to contribute:
+
+Fork the repository.
+Create a new branch (git checkout -b feature-branch).
+Commit your changes (git commit -m 'Add feature').
+Push to the branch (git push origin feature-branch).
+Create a pull request.
