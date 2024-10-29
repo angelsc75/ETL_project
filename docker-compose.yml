@@ -76,7 +76,7 @@ services:
       - app-network
 
   mongodb:
-    image: mongo:lastest
+    image: mongo:latest
     ports:
       - "27017:27017"
     volumes:
@@ -85,7 +85,7 @@ services:
       - app-network
 
   postgres:
-    image: postgres:17-bullseye
+    image: postgres:latest
     environment:
       - POSTGRES_DB=${DB_DB}
       - POSTGRES_USER=${DB_USER}
