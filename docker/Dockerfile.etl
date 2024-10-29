@@ -21,6 +21,9 @@ ENV PYTHONPATH="${PYTHONPATH}:/app"
 ENV KAFKA_HOST=host.docker.internal
 ENV KAFKA_PORT=29092
 
+ 
+
+
 # Confirma que Kafka está escuchando en este puerto.
 
 ENV REDIS_HOST=redis

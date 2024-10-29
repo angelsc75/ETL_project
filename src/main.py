@@ -14,9 +14,9 @@ main.load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 if __name__ == "__main__":
     # CONFIGURACIÓN DE KAFKA
     # Obtiene la dirección del broker y el ID del grupo de consumidores
-    kafka_broker = os.getenv('KAFKA_BROKER')         # Dirección del servidor Kafka
-    kafka_group = os.getenv('KAFKA_GROUP_ID')        # ID del grupo de consumidores
-    
+    # kafka_broker = os.getenv('KAFKA_BROKER')         # Dirección del servidor Kafka
+    kafka_group = os.getenv('KAFKA_GROUP_ID', 'my-group')        # ID del grupo de consumidores
+    kafka_bootstrap_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:29092')
     # CONFIGURACIÓN DE REDIS
     # Configuración para el buffer temporal que almacena mensajes antes de procesarlos en lote
     redis_host = os.getenv('REDIS_HOST', 'localhost')  # Host de Redis (default: localhost)
@@ -67,12 +67,12 @@ if __name__ == "__main__":
     # INICIALIZACIÓN DEL CONSUMIDOR KAFKA
     # Crea una instancia del consumidor con todos los loaders configurados
     kafka_consumer = KafkaConsumer(
-        kafka_broker,
-        kafka_group,
-        redis_loader,
-        mongo_loader,
-        sql_loader
-    )
+    kafka_bootstrap_servers,  # Usar esta variable
+    kafka_group,
+    redis_loader,
+    mongo_loader,
+    sql_loader
+)
     
     # Métricas
     processed_messages = Counter('processed_messages_total', 'Number of processed messages')
