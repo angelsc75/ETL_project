@@ -5,6 +5,8 @@ from sqlalchemy import Column, Integer, Float, String, or_, func
 from sqlalchemy.future import select
 import os
 from dotenv import main
+from fastapi import FastAPI, Response
+from prometheus_client import Counter, generate_latest
 
 # Cargar variables de entorno
 main.load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
@@ -76,11 +78,23 @@ class MiVista(Base):
 
 # Crear la instancia de FastAPI
 app = FastAPI()
+requests_total = Counter('http_requests_total', 'Total HTTP requests')
 
 # Ruta para la raíz del servidor
 @app.get("/")
 async def read_root():
     return {"message": "Bienvenido a la API de FastAPI con PostgreSQL"}
+
+@app.get("/metrics")
+def metrics():
+    return Response(generate_latest(), media_type="text/plain")
+
+# Middleware para contar requests
+@app.middleware("http")
+async def count_requests(request, call_next):
+    requests_total.inc()
+    response = await call_next(request)
+    return response
 
 # Nueva ruta para obtener el conteo de registros
 @app.get("/count")

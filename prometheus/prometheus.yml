@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'fastapi'
+    static_configs:
+      - targets: ['api:8000']
+  
+  - job_name: 'etl'
+    static_configs:
+      - targets: ['etl:8000']

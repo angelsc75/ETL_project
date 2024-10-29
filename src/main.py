@@ -5,6 +5,7 @@ from src.loading.sqldbloader import SQLloader         # Maneja la carga de datos
 from src.loading.redisloader import RedisLoader       # Maneja el buffer temporal en Redis
 import os                                            # Para manejar variables de entorno y paths
 from dotenv import main                              # Para cargar variables desde archivo .env
+from prometheus_client import Counter, start_http_server
 
 # Carga las variables de entorno desde el archivo .env
 # Busca el archivo .env un nivel arriba del directorio actual
@@ -72,7 +73,17 @@ if __name__ == "__main__":
         mongo_loader,
         sql_loader
     )
-
+    
+    # Métricas
+    processed_messages = Counter('processed_messages_total', 'Number of processed messages')
+    failed_messages = Counter('failed_messages_total', 'Number of failed messages')
+    start_http_server(8000)
+    try:
+    # Proceso del mensaje
+        processed_messages.inc()
+    except Exception:
+        failed_messages.inc()
+        
     # INICIO DEL PROCESO DE CONSUMO
     # Comienza a consumir mensajes de Kafka de manera continua
     kafka_consumer.start_consuming()
