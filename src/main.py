@@ -1,8 +1,8 @@
 # Importaciones necesarias
-from src.extraction.kafkaconsumer import KafkaConsumer  # Maneja la conexión y consumo de mensajes de Kafka
-from src.loading.mongodbloader import MongoDBLoader    # Maneja la carga de datos en MongoDB
-from src.loading.sqldbloader import SQLloader         # Maneja la carga de datos en PostgreSQL
-from src.loading.redisloader import RedisLoader       # Maneja el buffer temporal en Redis
+from extraction.kafkaconsumer import KafkaConsumer  # Maneja la conexión y consumo de mensajes de Kafka
+from loading.mongodbloader import MongoDBLoader    # Maneja la carga de datos en MongoDB
+from loading.sqldbloader import SQLloader         # Maneja la carga de datos en PostgreSQL
+from loading.redisloader import RedisLoader       # Maneja el buffer temporal en Redis
 import os                                            # Para manejar variables de entorno y paths
 from dotenv import main                              # Para cargar variables desde archivo .env
 from prometheus_client import Counter, start_http_server
