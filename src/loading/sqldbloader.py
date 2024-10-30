@@ -7,7 +7,7 @@ profesional, bancario y de red) y insertarlos en sus respectivas tablas.
 """
 
 import psycopg2
-from src.logger import logger
+from logger import logger
 
 class SQLloader:
     def __init__(self, host, database, user, password, port):

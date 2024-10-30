@@ -1,6 +1,6 @@
 import redis
 from typing import List, Dict, Any
-from src.logger import logger
+from logger import logger
 
 class RedisLoader:
     """
