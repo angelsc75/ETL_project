@@ -1,5 +1,5 @@
 # Importaciones necesarias
-from src.extraction.kafkaconsumer import KafkaConsumer  # Maneja la conexión y consumo de mensajes de Kafka
+from src.extraction.flafkaconsumer import KafkaConsumer  # Maneja la conexión y consumo de mensajes de Kafka
 from src.loading.mongodbloader import MongoDBLoader    # Maneja la carga de datos en MongoDB
 from src.loading.sqldbloader import SQLloader         # Maneja la carga de datos en PostgreSQL
 from src.loading.redisloader import RedisLoader       # Maneja el buffer temporal en Redis
