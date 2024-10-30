@@ -1,10 +1,11 @@
 # Importaciones necesarias
-from src.extraction.flafkaconsumer import KafkaConsumer  # Maneja la conexión y consumo de mensajes de Kafka
-from src.loading.mongodbloader import MongoDBLoader    # Maneja la carga de datos en MongoDB
-from src.loading.sqldbloader import SQLloader         # Maneja la carga de datos en PostgreSQL
-from src.loading.redisloader import RedisLoader       # Maneja el buffer temporal en Redis
+from extraction.kafkaconsumer import KafkaConsumer  # Maneja la conexión y consumo de mensajes de Kafka
+from loading.mongodbloader import MongoDBLoader    # Maneja la carga de datos en MongoDB
+from loading.sqldbloader import SQLloader         # Maneja la carga de datos en PostgreSQL
+from loading.redisloader import RedisLoader       # Maneja el buffer temporal en Redis
 import os                                            # Para manejar variables de entorno y paths
 from dotenv import main                              # Para cargar variables desde archivo .env
+from prometheus_client import Counter, start_http_server
 
 # Carga las variables de entorno desde el archivo .env
 # Busca el archivo .env un nivel arriba del directorio actual
@@ -14,8 +15,8 @@ if __name__ == "__main__":
     # CONFIGURACIÓN DE KAFKA
     # Obtiene la dirección del broker y el ID del grupo de consumidores
     kafka_broker = os.getenv('KAFKA_BROKER')         # Dirección del servidor Kafka
-    kafka_group = os.getenv('KAFKA_GROUP_ID')        # ID del grupo de consumidores
-    
+    kafka_group = os.getenv('KAFKA_GROUP_ID', 'my-group')        # ID del grupo de consumidores
+    kafka_bootstrap_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:29092')
     # CONFIGURACIÓN DE REDIS
     # Configuración para el buffer temporal que almacena mensajes antes de procesarlos en lote
     redis_host = os.getenv('REDIS_HOST', 'localhost')  # Host de Redis (default: localhost)
@@ -66,13 +67,23 @@ if __name__ == "__main__":
     # INICIALIZACIÓN DEL CONSUMIDOR KAFKA
     # Crea una instancia del consumidor con todos los loaders configurados
     kafka_consumer = KafkaConsumer(
-        kafka_broker,
-        kafka_group,
-        redis_loader,
-        mongo_loader,
-        sql_loader
-    )
-
+    kafka_bootstrap_servers,  # Usar esta variable
+    kafka_group,
+    redis_loader,
+    mongo_loader,
+    sql_loader
+)
+    
+    # Métricas
+    processed_messages = Counter('processed_messages_total', 'Number of processed messages')
+    failed_messages = Counter('failed_messages_total', 'Number of failed messages')
+    start_http_server(8000)
+    try:
+    # Proceso del mensaje
+        processed_messages.inc()
+    except Exception:
+        failed_messages.inc()
+        
     # INICIO DEL PROCESO DE CONSUMO
     # Comienza a consumir mensajes de Kafka de manera continua
     kafka_consumer.start_consuming()
