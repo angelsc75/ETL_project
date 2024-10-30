@@ -1,8 +1,8 @@
 # Importaciones necesarias
-from src.extraction.kafkaconsumer import KafkaConsumer  # Maneja la conexión y consumo de mensajes de Kafka
-from src.loading.mongodbloader import MongoDBLoader    # Maneja la carga de datos en MongoDB
-from src.loading.sqldbloader import SQLloader         # Maneja la carga de datos en PostgreSQL
-from src.loading.redisloader import RedisLoader       # Maneja el buffer temporal en Redis
+from extraction.kafkaconsumer import KafkaConsumer  # Maneja la conexión y consumo de mensajes de Kafka
+from loading.mongodbloader import MongoDBLoader    # Maneja la carga de datos en MongoDB
+from loading.sqldbloader import SQLloader         # Maneja la carga de datos en PostgreSQL
+from loading.redisloader import RedisLoader       # Maneja el buffer temporal en Redis
 import os                                            # Para manejar variables de entorno y paths
 from dotenv import main                              # Para cargar variables desde archivo .env
 
@@ -13,6 +13,7 @@ main.load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 if __name__ == "__main__":
     # CONFIGURACIÓN DE KAFKA
     # Obtiene la dirección del broker y el ID del grupo de consumidores
+
     kafka_broker = os.getenv('KAFKA_BROKER')         # Dirección del servidor Kafka
     kafka_group = os.getenv('KAFKA_GROUP_ID')        # ID del grupo de consumidores
     
@@ -26,8 +27,8 @@ if __name__ == "__main__":
     # CONFIGURACIÓN DE MONGODB
     # Parámetros de conexión específicos para MongoDB
     mongo_uri = os.getenv('MONGO_URI')              # URI de conexión a MongoDB
-    mongo_db_name = os.getenv('MONGO_DB')           # Nombre de la base de datos MongoDB
-    mongo_collection = os.getenv('MONGO_COLLECTION') # Nombre de la colección en MongoDB
+    mongo_db_name = os.getenv('MONGO_DB_NAME')           # Nombre de la base de datos MongoDB
+    mongo_collection = os.getenv('MONGO_COLLECTION_NAME') # Nombre de la colección en MongoDB
     
     # CONFIGURACIÓN DE POSTGRESQL
     # Parámetros de conexión específicos para PostgreSQL

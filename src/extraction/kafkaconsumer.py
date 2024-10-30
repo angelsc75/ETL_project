@@ -1,8 +1,8 @@
 from confluent_kafka import Consumer, KafkaError     # Cliente Kafka para consumo de mensajes
 from confluent_kafka.admin import AdminClient        # Cliente admin para gestionar tópicos
-from src.transformation.datatransformer import process_and_group_data  # Procesamiento de datos
+from transformation.datatransformer import process_and_group_data  # Procesamiento de datos
 import json
-from src.logger import logger                       # Logger personalizado para el sistema
+from logger import logger                       # Logger personalizado para el sistema
 
 
 class KafkaConsumer:

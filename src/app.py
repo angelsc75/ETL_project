@@ -33,7 +33,9 @@ def get_row_count():
         if response.status_code == 200:
             return response.json().get('total_rows', 0)
         return 0
-    except:
+    except (requests.RequestException, ValueError) as e:
+        # Logear el error si tienes configurado logging
+        print(f"Error getting row count: {str(e)}")
         return 0
 
 # Función para formatear el DataFrame
