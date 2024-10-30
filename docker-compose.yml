@@ -6,7 +6,8 @@ services:
       context: .
       dockerfile: docker/Dockerfile.etl
     environment:
-      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_BROKER = kafka:29092 
       - KAFKA_GROUP_ID=${KAFKA_GROUP_ID}
       - KAFKA_AUTO_OFFSET_RESET=${KAFKA_AUTO_OFFSET_RESET}
       - KAFKA_TOPIC=${KAFKA_TOPIC}
@@ -28,8 +29,10 @@ services:
       - redis
       - mongodb
       - postgres
+      
     networks:
       - app-network
+      - kafka_shared_network
 
   api:
     build:
@@ -136,3 +139,5 @@ volumes:
 networks:
   app-network:
     driver: bridge
+  kafka_shared_network:
+    external: true

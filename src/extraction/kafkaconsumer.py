@@ -49,7 +49,7 @@ class KafkaConsumer:
         try:
             # Obtener lista de tópicos disponibles
             metadata = self.admin_client.list_topics(timeout=10)
-            available_topics = list(metadata.topics.keys())
+            available_topics = "probando"
             logger.info(f"📋 Tópicos disponibles: {available_topics}")
             print(f"📋 Tópicos disponibles: {available_topics}")
             
@@ -60,7 +60,7 @@ class KafkaConsumer:
                 return
 
             # Suscribirse al primer tópico disponible
-            primer_topico = available_topics[0]
+            primer_topico = "probando"
             self.consumer.subscribe([primer_topico])
             logger.info(f"✅ Suscrito al tópico: {primer_topico}")
             print(f"✅ Suscrito al tópico: {primer_topico}")
