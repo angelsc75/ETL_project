@@ -13,7 +13,8 @@ main.load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 if __name__ == "__main__":
     # CONFIGURACIÓN DE KAFKA
     # Obtiene la dirección del broker y el ID del grupo de consumidores
-    kafka_broker = "kafka:9092"         # Dirección del servidor Kafka
+    kafka_broker = "localhost:29092"         # Dirección del servidor Kafka en local
+    # kafka_broker = "kafka:9092"            # dirección del servidor para dockerizar
     kafka_group = os.getenv('KAFKA_GROUP_ID')        # ID del grupo de consumidores
     
     # CONFIGURACIÓN DE REDIS
