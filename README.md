@@ -273,4 +273,4 @@ We welcome contributions to this project! If you'd like to contribute:
 
 This setup ensures all components, including the ETL, Streamlit dashboard, and FastAPI, are fully operational for development and exploration.
 ## Data flow diagram
-<img src="images/Diagrama_hrpro.svg" width="800">
+<img src="images/Diagrama_hrpro.png" width="800">
