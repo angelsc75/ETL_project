@@ -1,6 +1,7 @@
 ![](./src/assets/header.png)
 
 # HR Pro Data Management System
+Note: This project is carried out within the Factoría F5 AI bootcamp, which took place between May 2024 and March 2025. It is a group project that corresponds to the ETL part.
 
 Welcome to the **HR Pro Data Management System** repository! This project, developed by the G7 Data Engineering, is a comprehensive data engineering solution for **HR Pro**, a prominent human resources company. The system is designed to organize and analyze vast amounts of HR data efficiently, integrating various data sources such as job applications, payroll records, and employee surveys.
 
@@ -271,3 +272,5 @@ We welcome contributions to this project! If you'd like to contribute:
 --- 
 
 This setup ensures all components, including the ETL, Streamlit dashboard, and FastAPI, are fully operational for development and exploration.
+## Data flow diagram
+<img src="images/Diagrama_hrpro.svg" width="800">
